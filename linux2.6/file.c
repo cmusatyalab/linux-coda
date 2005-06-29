@@ -133,6 +133,7 @@ int coda_open(struct inode *coda_inode, struct file *coda_file)
 	unsigned short coda_flags = coda_flags_to_cflags(flags);
 	struct coda_file_info *cfi;
 
+	lock_kernel();
 	coda_vfs_stat.open++;
 
 	cfi = kmalloc(sizeof(struct coda_file_info), GFP_KERNEL);
@@ -140,8 +141,6 @@ int coda_open(struct inode *coda_inode, struct file *coda_file)
 		unlock_kernel();
 		return -ENOMEM;
 	}
-
-	lock_kernel();
 
 	error = venus_open(coda_inode->i_sb, coda_i2f(coda_inode), coda_flags,
 			   &host_file); 
