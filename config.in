@@ -1,0 +1,10 @@
+#
+# config.in for Coda
+#
+CONF_SRC=1
+LINUX=/usr/src/linux
+MODPATH=/lib/modules
+CC=gcc
+LD=ld
+PCDEBUG=
+# UNSAFE_TOOLS is not set

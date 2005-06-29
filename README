@@ -1,0 +1,86 @@
+Coda Filesystem: kernel module
+==============================
+
+We now have a reaonably flexible method to build kernel modules. You
+can build the module for a kernel which you are not running at the
+time of the build.
+
+
+NOTE: the code here is always newer than or equal to:
+ - the kernel 
+ - the big Coda tarball
+
+
+To build a coda.o module for your Linux kernel:
+-----------------------------------------------
+
+For 2.1/2.2/2.3 kernels:
+----------------
+
+A) 
+
+Get modversions.h as part of /usr/src/linux/include/linux as follows:
+
+cd /usr/src/linux (or whereever you hold your kernel source)
+make oldconfig
+make dep
+make your-type-of-image and modules.
+
+
+B) 
+In this directory build the coda.o module:
+
+type:
+make config  --- answer the questions
+make coda.o
+su
+make install
+
+C)
+Get going!
+
+Start Coda. (venus-setup testserver.coda.cs.cmu.edu 10000 ; venus & )
+
+For 2.0 kernels:
+----------------
+
+A)
+Prep the kernel
+
+cd /usr/src/linux-for-you
+make oldconfig
+make dep
+
+B) 
+In this directory build the coda.o module:
+
+type:
+make config  --- answer the questions
+make coda.o
+su
+make install
+
+C)
+Get going!
+(venus-setup testserver.coda.cs.cmu.edu 10000 ; venus & )
+
+
+Note: 
+=====
+
+1. If you build for a running kernel, you must still have a source 
+tree for that Linux release, otherwise the headers cannot be found.
+However, that source tree doesn't need modversions.h etc.
+
+2. We don't actively maintain 2.0 code anymore.  The 2.1 code is
+preferred, but not yet perfect.  Very heavy use of 2.1 still leads to
+aliases not being cleaned up.  We are working on this.  We appreciate
+detailed log messages (with coda_debug set to D_DOWNCALL in
+linux21/coda_linux.c) of such problems.
+
+Let us know if there are problems!
+
+Peter Braam
+6/24/98
+braam@cs.cmu.edu
+
