@@ -31,6 +31,8 @@
 #include <linux/coda_fs_i.h>
 #include <linux/coda_psdev.h>
 
+#include "compat.h"
+
 /* 
  * Coda stuff
  */
@@ -40,9 +42,8 @@ extern struct file_system_type coda_fs_type;
 int           coda_hard;         /* allows signals during upcalls */
 unsigned long coda_timeout = 30; /* .. secs, then signals will dequeue */
 
-
 struct venus_comm coda_comms[MAX_CODADEVS];
-static struct class_simple *coda_psdev_class;
+static CLASS *coda_psdev_class;
 
 /*
  * Device operations
@@ -341,13 +342,13 @@ static int init_coda_psdev(void)
 		     CODA_PSDEV_MAJOR);
               return -EIO;
 	}
-	coda_psdev_class = class_simple_create(THIS_MODULE, "coda");
+	coda_psdev_class = class_create(THIS_MODULE, "coda");
 	if (IS_ERR(coda_psdev_class)) {
 		err = PTR_ERR(coda_psdev_class);
 		goto out_chrdev;
 	}		
 	for (i = 0; i < MAX_CODADEVS; i++)
-		class_simple_device_add(coda_psdev_class, MKDEV(CODA_PSDEV_MAJOR,i), NULL, "cfs%d", i);
+		class_device_create(coda_psdev_class, MKDEV(CODA_PSDEV_MAJOR,i), NULL, "cfs%d", i);
 
 	devfs_mk_dir ("coda");
 	for (i = 0; i < MAX_CODADEVS; i++) {
@@ -365,8 +366,8 @@ out_class:
 	devfs_remove("coda");
 
 	for (i = 0; i < MAX_CODADEVS; i++) 
-		class_simple_device_remove(MKDEV(CODA_PSDEV_MAJOR, i));
-	class_simple_destroy(coda_psdev_class);
+		class_device_destroy(coda_psdev_class, MKDEV(CODA_PSDEV_MAJOR, i));
+	class_destroy(coda_psdev_class);
 out_chrdev:
 	unregister_chrdev(CODA_PSDEV_MAJOR, "coda");
 out:
@@ -408,10 +409,10 @@ static int __init init_coda(void)
 	return 0;
 out:
 	for (i = 0; i < MAX_CODADEVS; i++) {
-		class_simple_device_remove(MKDEV(CODA_PSDEV_MAJOR, i));
+		class_device_destroy(coda_psdev_class, MKDEV(CODA_PSDEV_MAJOR, i));
 		devfs_remove("coda/%d", i);
 	}
-	class_simple_destroy(coda_psdev_class);
+	class_destroy(coda_psdev_class);
 	devfs_remove("coda");
 	unregister_chrdev(CODA_PSDEV_MAJOR, "coda");
 	coda_sysctl_clean();
@@ -430,10 +431,10 @@ static void __exit exit_coda(void)
                 printk("coda: failed to unregister filesystem\n");
         }
 	for (i = 0; i < MAX_CODADEVS; i++) {
-		class_simple_device_remove(MKDEV(CODA_PSDEV_MAJOR, i));
+		class_device_destroy(coda_psdev_class, MKDEV(CODA_PSDEV_MAJOR, i));
 		devfs_remove("coda/%d", i);
 	}
-	class_simple_destroy(coda_psdev_class);
+	class_destroy(coda_psdev_class);
 	devfs_remove("coda");
 	unregister_chrdev(CODA_PSDEV_MAJOR, "coda");
 	coda_sysctl_clean();
