@@ -1,0 +1,20 @@
+#!/bin/sh
+
+if [ -e /sbin/ksyms ] ; then
+    KSYMS="/sbin/ksyms -a"
+else
+    KSYMS="cat /proc/ksyms"
+fi
+
+if $KSYMS | grep -q printk_R ; then
+    echo "#ifndef __LINUX_MODVERSIONS_H" > modversions.h
+    echo "#define __LINUX_MODVERSIONS_H" >> modversions.h
+    $KSYMS | sed -ne 's/^[0-9a-f]*[ \t]*\(\(.*\)_R\(smp_\)*[0-9a-f]\{8\}\).*$/#define \2 \1/p' >> modversions.h
+    echo "#endif" >> modversions.h
+    echo -n " -DMODVERSIONS -include modversions.h"
+fi
+
+( $KSYMS | grep -q smp_num_cpus ) && echo -n " -D__SMP__"
+[ "$(uname -m)" = ppc ]       && echo -n " -msoft-float"
+echo
+
