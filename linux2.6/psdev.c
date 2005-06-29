@@ -387,7 +387,7 @@ static int __init init_coda(void)
 #ifdef CONFIG_CODA_FS_OLD_API
 	       "v5.3.20"
 #else
-	       "v6.1"
+	       "v6.2"
 #endif
 	       ", coda@cs.cmu.edu\n");
 
