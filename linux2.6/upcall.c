@@ -38,7 +38,7 @@
 #include <linux/coda_cache.h>
 #include <linux/coda_proc.h> 
 
-static int coda_upcall(struct coda_sb_info *mntinfo, int inSize, int *outSize, 
+static int coda_upcall(struct venus_comm *vc, int inSize, int *outSize, 
 		       union inputArgs *buffer);
 
 static void *alloc_upcall(int opcode, int size)
@@ -419,7 +419,7 @@ int venus_readlink(struct super_block *sb, struct CodaFid *fid,
 
         inp->coda_readlink.VFid = *fid;
     
-        error =  coda_upcall(coda_sbp(sb), insize, &outsize, inp);
+        error = coda_upcall(coda_sbp(sb), insize, &outsize, inp);
 	
 	if (! error) {
                 retlen = outp->coda_readlink.count;
@@ -726,18 +726,16 @@ static inline void coda_waitfor_upcall(struct upc_req *req)
  * are all mapped to -EINTR, while showing a nice warning message. (jh)
  * 
  */
-static int coda_upcall(struct coda_sb_info *sbi, 
-		int inSize, int *outSize, 
-		union inputArgs *buffer) 
+static int coda_upcall(struct venus_comm *vc, 
+		       int inSize, int *outSize, 
+		       union inputArgs *buffer) 
 {
-	struct venus_comm *vcommp;
 	union outputArgs *out;
 	union inputArgs *sig_inputArgs;
 	struct upc_req *req, *sig_req;
 	int error = 0;
 
-	vcommp = sbi->sbi_vcomm;
-	if ( !vcommp->vc_inuse ) {
+	if (!vc->vc_inuse) {
 		printk("coda: Venus dead, not sending upcall\n");
 		return -ENXIO;
 	}
@@ -752,16 +750,16 @@ static int coda_upcall(struct coda_sb_info *sbi,
 	req->uc_inSize = inSize;
 	req->uc_outSize = *outSize ? *outSize : inSize;
 	req->uc_opcode = ((union inputArgs *)buffer)->ih.opcode;
-	req->uc_unique = ++vcommp->vc_seq;
+	req->uc_unique = ++vc->vc_seq;
 	init_waitqueue_head(&req->uc_sleep);
 	
 	/* Fill in the common input args. */
 	((union inputArgs *)buffer)->ih.unique = req->uc_unique;
 
 	/* Append msg to pending queue and poke Venus. */
-	list_add(&req->uc_chain, vcommp->vc_pending.prev);
+	list_add_tail(&req->uc_chain, &vc->vc_pending);
         
-	wake_up_interruptible(&vcommp->vc_waitq);
+	wake_up_interruptible(&vc->vc_waitq);
 	/* We can be interrupted while we wait for Venus to process
 	 * our request.  If the interrupt occurs before Venus has read
 	 * the request, we dequeue and return. If it occurs after the
@@ -794,7 +792,7 @@ static int coda_upcall(struct coda_sb_info *sbi,
 		goto exit;
 
 	/* interrupted after Venus did its read, send signal */
-	if (!vcommp->vc_inuse) {
+	if (!vc->vc_inuse) {
 		printk("coda: Venus dead, not sending interrupt.\n");
 		goto exit;
 	}
@@ -821,8 +819,8 @@ static int coda_upcall(struct coda_sb_info *sbi,
 	sig_req->uc_outSize = sizeof(struct coda_in_hdr);
 		    
 	/* insert at head of queue! */
-	list_add(&sig_req->uc_chain, &vcommp->vc_pending);
-	wake_up_interruptible(&vcommp->vc_waitq);
+	list_add(&sig_req->uc_chain, &vc->vc_pending);
+	wake_up_interruptible(&vc->vc_waitq);
 
 exit:
 	upc_free(req);

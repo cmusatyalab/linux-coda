@@ -8,11 +8,6 @@
 
 struct kstatfs;
 
-struct coda_sb_info
-{
-	struct venus_comm *sbi_vcomm;
-};
-
 /* communication pending/processing queues */
 struct venus_comm {
 	u_long		    vc_seq;
@@ -23,12 +18,10 @@ struct venus_comm {
 	struct super_block *vc_sb;
 };
 
-
-static inline struct coda_sb_info *coda_sbp(struct super_block *sb)
+static inline struct venus_comm *coda_sbp(struct super_block *sb)
 {
-    return ((struct coda_sb_info *)((sb)->s_fs_info));
+    return (struct venus_comm *)((sb)->s_fs_info);
 }
-
 
 /* upcalls */
 int venus_rootfid(struct super_block *sb, struct CodaFid *fidp);

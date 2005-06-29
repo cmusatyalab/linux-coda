@@ -145,7 +145,6 @@ static int get_device_index(struct coda_mount_data *data)
 static int coda_fill_super(struct super_block *sb, void *data, int silent)
 {
         struct inode *root = NULL; 
-	struct coda_sb_info *sbi = NULL;
 	struct venus_comm *vc = NULL;
 	struct CodaFid fid;
         int error;
@@ -170,16 +169,9 @@ static int coda_fill_super(struct super_block *sb, void *data, int silent)
 		return -EBUSY;
 	}
 
-	sbi = kmalloc(sizeof(struct coda_sb_info), GFP_KERNEL);
-	if(!sbi) {
-		return -ENOMEM;
-	}
-
 	vc->vc_sb = sb;
 
-	sbi->sbi_vcomm = vc;
-
-	sb->s_fs_info = sbi;
+	sb->s_fs_info = vc;
 	sb->s_flags |= MS_NOATIME;
 	sb->s_blocksize = 1024;	/* XXXXX  what do we put here?? */
 	sb->s_blocksize_bits = 10;
@@ -210,26 +202,19 @@ static int coda_fill_super(struct super_block *sb, void *data, int silent)
         return 0;
 
  error:
-	if (sbi) {
-		kfree(sbi);
-		if(vc)
-			vc->vc_sb = NULL;		
-	}
 	if (root)
                 iput(root);
+	if(vc)
+		vc->vc_sb = NULL;		
 
         return -EINVAL;
 }
 
 static void coda_put_super(struct super_block *sb)
 {
-        struct coda_sb_info *sbi;
-
-	sbi = coda_sbp(sb);
-	sbi->sbi_vcomm->vc_sb = NULL;
-
+	coda_sbp(sb)->vc_sb = NULL;
+	sb->s_fs_info = NULL;
 	printk("Coda: Bye bye.\n");
-	kfree(sbi);
 }
 
 static void coda_clear_inode(struct inode *inode)
