@@ -641,45 +641,81 @@ int venus_statfs(struct super_block *sb, struct kstatfs *sfs)
  * coda_upcall and coda_downcall routines.
  * 
  */
+static void block_signals(sigset_t *old)
+{
+	spin_lock_irq(&current->sighand->siglock);
+	*old = current->blocked;
 
-static inline void coda_waitfor_upcall(struct upc_req *vmp,
-				       struct venus_comm *vcommp)
+	sigfillset(&current->blocked);
+	sigdelset(&current->blocked, SIGKILL);
+	sigdelset(&current->blocked, SIGSTOP);
+	sigdelset(&current->blocked, SIGINT);
+
+	recalc_sigpending();
+	spin_unlock_irq(&current->sighand->siglock);
+}
+
+static void unblock_signals(sigset_t *old)
+{
+	spin_lock_irq(&current->sighand->siglock);
+	current->blocked = *old;
+	recalc_sigpending();
+	spin_unlock_irq(&current->sighand->siglock);
+}
+
+/* Don't allow signals to interrupt the following upcalls before venus
+ * has seen them,
+ * - CODA_CLOSE or CODA_RELEASE upcall	(to avoid userspace refcount problems)
+ * - CODA_STORE				(to avoid data loss)
+ */
+#define CODA_INTERRUPTIBLE(r) (!coda_hard && \
+			       (((r)->uc_opcode != CODA_CLOSE && \
+				 (r)->uc_opcode != CODA_STORE && \
+				 (r)->uc_opcode != CODA_RELEASE) || \
+				(r)->uc_flags & REQ_READ))
+static inline void coda_waitfor_upcall(struct upc_req *req)
 {
 	DECLARE_WAITQUEUE(wait, current);
+	unsigned long timeout = jiffies + coda_timeout * HZ;
+	sigset_t old;
+	int blocked;
 
-	vmp->uc_posttime = jiffies;
+	block_signals(&old);
+	blocked = 1;
 
-	add_wait_queue(&vmp->uc_sleep, &wait);
+	add_wait_queue(&req->uc_sleep, &wait);
 	for (;;) {
-		if ( !coda_hard && vmp->uc_opcode != CODA_CLOSE ) 
+		if (CODA_INTERRUPTIBLE(req))
 			set_current_state(TASK_INTERRUPTIBLE);
 		else
 			set_current_state(TASK_UNINTERRUPTIBLE);
 
-                /* venus died */
-                if ( !vcommp->vc_inuse )
-                        break;
-
 		/* got a reply */
-		if ( vmp->uc_flags & ( REQ_WRITE | REQ_ABORT ) )
+		if (req->uc_flags & (REQ_WRITE | REQ_ABORT))
 			break;
 
-		if ( !coda_hard && vmp->uc_opcode != CODA_CLOSE && signal_pending(current) ) {
-			/* if this process really wants to die, let it go */
-			if ( sigismember(&(current->pending.signal), SIGKILL) ||
-			     sigismember(&(current->pending.signal), SIGINT) )
-				break;
-			/* signal is present: after timeout always return 
-			   really smart idea, probably useless ... */
-			if ( jiffies - vmp->uc_posttime > coda_timeout * HZ )
-				break; 
+		if (blocked && time_after(jiffies, timeout) &&
+		    CODA_INTERRUPTIBLE(req))
+		{
+			unblock_signals(&old);
+			blocked = 0;
 		}
-		schedule();
-	}
-	remove_wait_queue(&vmp->uc_sleep, &wait);
-	set_current_state(TASK_RUNNING);
 
-	return;
+		if (signal_pending(current)) {
+			list_del(&req->uc_chain);
+			break;
+		}
+
+		if (blocked)
+			schedule_timeout(HZ);
+		else
+			schedule();
+	}
+	if (blocked)
+		unblock_signals(&old);
+
+	remove_wait_queue(&req->uc_sleep, &wait);
+	set_current_state(TASK_RUNNING);
 }
 
 
@@ -699,21 +735,21 @@ static int coda_upcall(struct coda_sb_info *sbi,
 {
 	struct venus_comm *vcommp;
 	union outputArgs *out;
-	struct upc_req *req;
+	union inputArgs *sig_inputArgs;
+	struct upc_req *req, *sig_req;
 	int error = 0;
 
 	vcommp = sbi->sbi_vcomm;
 	if ( !vcommp->vc_inuse ) {
-		printk("No pseudo device in upcall comms at %p\n", vcommp);
-                return -ENXIO;
+		printk("coda: Venus dead, not sending upcall\n");
+		return -ENXIO;
 	}
 
 	/* Format the request message. */
 	req = upc_alloc();
-	if (!req) {
-		printk("Failed to allocate upc_req structure\n");
+	if (!req)
 		return -ENOMEM;
-	}
+
 	req->uc_data = (void *)buffer;
 	req->uc_flags = 0;
 	req->uc_inSize = inSize;
@@ -726,7 +762,7 @@ static int coda_upcall(struct coda_sb_info *sbi,
 	((union inputArgs *)buffer)->ih.unique = req->uc_unique;
 
 	/* Append msg to pending queue and poke Venus. */
-	list_add(&(req->uc_chain), vcommp->vc_pending.prev);
+	list_add(&req->uc_chain, vcommp->vc_pending.prev);
         
 	wake_up_interruptible(&vcommp->vc_waitq);
 	/* We can be interrupted while we wait for Venus to process
@@ -739,66 +775,59 @@ static int coda_upcall(struct coda_sb_info *sbi,
 	 * ENODEV.  */
 
 	/* Go to sleep.  Wake up on signals only after the timeout. */
-	coda_waitfor_upcall(req, vcommp);
+	coda_waitfor_upcall(req);
 
-	if (vcommp->vc_inuse) {      /* i.e. Venus is still alive */
-	    /* Op went through, interrupt or not... */
-	    if (req->uc_flags & REQ_WRITE) {
+	/* Op went through, interrupt or not... */
+	if (req->uc_flags & REQ_WRITE) {
 		out = (union outputArgs *)req->uc_data;
 		/* here we map positive Venus errors to kernel errors */
 		error = -out->oh.result;
 		*outSize = req->uc_outSize;
 		goto exit;
-	    }
-	    if ( !(req->uc_flags & REQ_READ) && signal_pending(current)) { 
-		/* Interrupted before venus read it. */
-		list_del(&(req->uc_chain));
-		/* perhaps the best way to convince the app to
-		   give up? */
-		error = -EINTR;
-		goto exit;
-	    } 
-	    if ( (req->uc_flags & REQ_READ) && signal_pending(current) ) {
-		    /* interrupted after Venus did its read, send signal */
-		    union inputArgs *sig_inputArgs;
-		    struct upc_req *sig_req;
-		    
-		    list_del(&(req->uc_chain));
-		    error = -ENOMEM;
-		    sig_req = upc_alloc();
-		    if (!sig_req) goto exit;
-
-		    CODA_ALLOC((sig_req->uc_data), char *, sizeof(struct coda_in_hdr));
-		    if (!sig_req->uc_data) {
-			upc_free(sig_req);
-			goto exit;
-		    }
-		    
-		    error = -EINTR;
-		    sig_inputArgs = (union inputArgs *)sig_req->uc_data;
-		    sig_inputArgs->ih.opcode = CODA_SIGNAL;
-		    sig_inputArgs->ih.unique = req->uc_unique;
-		    
-		    sig_req->uc_flags = REQ_ASYNC;
-		    sig_req->uc_opcode = sig_inputArgs->ih.opcode;
-		    sig_req->uc_unique = sig_inputArgs->ih.unique;
-		    sig_req->uc_inSize = sizeof(struct coda_in_hdr);
-		    sig_req->uc_outSize = sizeof(struct coda_in_hdr);
-		    
-		    /* insert at head of queue! */
-		    list_add(&(sig_req->uc_chain), &vcommp->vc_pending);
-		    wake_up_interruptible(&vcommp->vc_waitq);
-	    } else {
-		    printk("Coda: Strange interruption..\n");
-		    error = -EINTR;
-	    }
-	} else {	/* If venus died i.e. !VC_OPEN(vcommp) */
-	        printk("coda_upcall: Venus dead on (op,un) (%d.%d) flags %d\n",
-		       req->uc_opcode, req->uc_unique, req->uc_flags);
-		error = -ENODEV;
 	}
 
- exit:
+	error = -EINTR;
+	if (!signal_pending(current)) {
+		printk("coda: Unexpected interruption.. Venus died?\n");
+		goto exit;
+	}
+
+	/* Interrupted before venus read it. */
+	if (!(req->uc_flags & REQ_READ))
+		goto exit;
+
+	/* interrupted after Venus did its read, send signal */
+	if (!vcommp->vc_inuse) {
+		printk("coda: Venus dead, not sending interrupt.\n");
+		goto exit;
+	}
+
+	error = -ENOMEM;
+	sig_req = upc_alloc();
+	if (!sig_req) goto exit;
+
+	CODA_ALLOC((sig_req->uc_data), char *, sizeof(struct coda_in_hdr));
+	if (!sig_req->uc_data) {
+		upc_free(sig_req);
+		goto exit;
+	}
+		    
+	error = -EINTR;
+	sig_inputArgs = (union inputArgs *)sig_req->uc_data;
+	sig_inputArgs->ih.opcode = CODA_SIGNAL;
+	sig_inputArgs->ih.unique = req->uc_unique;
+		    
+	sig_req->uc_flags = REQ_ASYNC;
+	sig_req->uc_opcode = sig_inputArgs->ih.opcode;
+	sig_req->uc_unique = sig_inputArgs->ih.unique;
+	sig_req->uc_inSize = sizeof(struct coda_in_hdr);
+	sig_req->uc_outSize = sizeof(struct coda_in_hdr);
+		    
+	/* insert at head of queue! */
+	list_add(&sig_req->uc_chain, &vcommp->vc_pending);
+	wake_up_interruptible(&vcommp->vc_waitq);
+
+exit:
 	upc_free(req);
 	return error;
 }
@@ -839,77 +868,65 @@ static int coda_upcall(struct coda_sb_info *sbi,
 
 int coda_downcall(int opcode, union outputArgs * out, struct super_block *sb)
 {
+	struct inode *inode = NULL;
+	struct CodaFid *fid, *newfid;
+
 	/* Handle invalidation requests. */
-          if ( !sb || !sb->s_root || !sb->s_root->d_inode)
-		  return 0; 
+	if (!sb || !sb->s_root)
+		return 0; 
 
-	  switch (opcode) {
+	switch (opcode) {
+	case CODA_FLUSH:
+		coda_cache_clear_all(sb);
+		shrink_dcache_sb(sb);
+		if (sb->s_root->d_inode)
+			coda_flag_inode(sb->s_root->d_inode, C_FLUSH);
+		break;
 
-	  case CODA_FLUSH : {
-		   coda_cache_clear_all(sb);
-		   shrink_dcache_sb(sb);
-		   coda_flag_inode(sb->s_root->d_inode, C_FLUSH);
-		   return(0);
-	  }
+	case CODA_PURGEUSER:
+		coda_cache_clear_all(sb);
+		break;
 
-	  case CODA_PURGEUSER : {
-		   coda_cache_clear_all(sb);
-		   return(0);
-	  }
+	case CODA_ZAPDIR:
+		fid = &out->coda_zapdir.CodaFid;
+		inode = coda_fid_to_inode(fid, sb);
+		if (inode) {
+			coda_flag_inode_children(inode, C_PURGE);
+			coda_flag_inode(inode, C_VATTR);
+		}
+		break;
 
-	  case CODA_ZAPDIR : {
-	          struct inode *inode;
-		  struct CodaFid *fid = &out->coda_zapdir.CodaFid;
+	case CODA_ZAPFILE:
+		fid = &out->coda_zapfile.CodaFid;
+		inode = coda_fid_to_inode(fid, sb);
+		if (inode)
+			coda_flag_inode(inode, C_VATTR);
+		break;
 
-		  inode = coda_fid_to_inode(fid, sb);
-		  if (inode) {
-			  coda_flag_inode_children(inode, C_PURGE);
-	                  coda_flag_inode(inode, C_VATTR);
-			  iput(inode);
-		  }
-		  
-		  return(0);
-	  }
-
-	  case CODA_ZAPFILE : {
-	          struct inode *inode;
-		  struct CodaFid *fid = &out->coda_zapfile.CodaFid;
-		  inode = coda_fid_to_inode(fid, sb);
-		  if ( inode ) {
-	                  coda_flag_inode(inode, C_VATTR);
-			  iput(inode);
-		  }
-		  return 0;
-	  }
-
-	  case CODA_PURGEFID : {
-	          struct inode *inode;
-		  struct CodaFid *fid = &out->coda_purgefid.CodaFid;
-		  inode = coda_fid_to_inode(fid, sb);
-		  if ( inode ) { 
+	case CODA_PURGEFID:
+		fid = &out->coda_purgefid.CodaFid;
+		inode = coda_fid_to_inode(fid, sb);
+		if (inode) { 
 			coda_flag_inode_children(inode, C_PURGE);
 
 			/* catch the dentries later if some are still busy */
 			coda_flag_inode(inode, C_PURGE);
 			d_prune_aliases(inode);
+		}
+		break;
 
-			iput(inode);
-		  }
-		  return 0;
-	  }
+	case CODA_REPLACE:
+		fid = &out->coda_replace.OldFid;
+		newfid = &out->coda_replace.NewFid;
+		inode = coda_fid_to_inode(fid, sb);
+		if (inode)
+		    coda_replace_fid(inode, fid, newfid);
+		break;
+	}
 
-	  case CODA_REPLACE : {
-	          struct inode *inode;
-		  struct CodaFid *oldfid = &out->coda_replace.OldFid;
-		  struct CodaFid *newfid = &out->coda_replace.NewFid;
-		  inode = coda_fid_to_inode(oldfid, sb);
-		  if ( inode ) { 
-			  coda_replace_fid(inode, oldfid, newfid);
-			  iput(inode);
-		  }
-		  return 0;
-	  }
-	  }
-	  return 0;
+	if (inode)
+		iput(inode);
+
+	return 0;
 }
 
