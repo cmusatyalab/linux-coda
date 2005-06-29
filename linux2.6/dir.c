@@ -430,14 +430,12 @@ static int coda_rename(struct inode *old_dir, struct dentry *old_dentry,
 int coda_readdir(struct file *coda_file, void *dirent, filldir_t filldir)
 {
 	struct dentry *coda_dentry = coda_file->f_dentry;
-	struct coda_file_info *cfi;
 	struct file *host_file;
 	struct inode *host_inode;
 	int ret;
 
-	cfi = CODA_FTOC(coda_file);
-	BUG_ON(!cfi || cfi->cfi_magic != CODA_MAGIC);
-	host_file = cfi->cfi_container;
+	host_file = CODA_FTOC(coda_file);
+	BUG_ON(!host_file);
 
 	coda_vfs_stat.readdir++;
 

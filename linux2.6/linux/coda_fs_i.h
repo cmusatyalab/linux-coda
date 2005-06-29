@@ -27,16 +27,7 @@ struct coda_inode_info {
 	struct inode	   vfs_inode;
 };
 
-/*
- * coda fs file private data
- */
-#define CODA_MAGIC 0xC0DAC0DA
-struct coda_file_info {
-	int		   cfi_magic;	  /* magic number */
-	struct file	  *cfi_container; /* container file for this cnode */
-};
-
-#define CODA_FTOC(file) ((struct coda_file_info *)((file)->private_data))
+#define CODA_FTOC(f) (struct file *)((f)->private_data)
 
 /* flags */
 #define C_VATTR       0x1   /* Validity of vattr in inode */
