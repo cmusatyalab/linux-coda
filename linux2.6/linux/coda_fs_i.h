@@ -34,7 +34,6 @@ struct coda_inode_info {
 struct coda_file_info {
 	int		   cfi_magic;	  /* magic number */
 	struct file	  *cfi_container; /* container file for this cnode */
-	unsigned int	   cfi_mapcount;  /* nr of times this file is mapped */
 };
 
 #define CODA_FTOC(file) ((struct coda_file_info *)((file)->private_data))

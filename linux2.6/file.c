@@ -95,9 +95,9 @@ static int
 coda_file_mmap(struct file *coda_file, struct vm_area_struct *vma)
 {
 	struct coda_file_info *cfi;
-	struct coda_inode_info *cii;
 	struct file *host_file;
-	struct inode *coda_inode, *host_inode;
+	struct inode *coda_inode;
+	int err;
 
 	cfi = CODA_FTOC(coda_file);
 	BUG_ON(!cfi || cfi->cfi_magic != CODA_MAGIC);
@@ -107,22 +107,23 @@ coda_file_mmap(struct file *coda_file, struct vm_area_struct *vma)
 		return -ENODEV;
 
 	coda_inode = coda_file->f_dentry->d_inode;
-	host_inode = host_file->f_dentry->d_inode;
-	coda_file->f_mapping = host_file->f_mapping;
-	if (coda_inode->i_mapping == &coda_inode->i_data)
-		coda_inode->i_mapping = host_inode->i_mapping;
 
-	/* only allow additional mmaps as long as userspace isn't changing
-	 * the container file on us! */
-	else if (coda_inode->i_mapping != host_inode->i_mapping)
+	/* we can't use mmap if we were not able to setup the redirection
+	 * during open */
+	if (coda_file->f_mapping == &coda_inode->i_data)
 		return -EBUSY;
 
-	/* keep track of how often the coda_inode/host_file has been mmapped */
-	cii = ITOC(coda_inode);
-	cii->c_mapcount++;
-	cfi->cfi_mapcount++;
+	err = host_file->f_op->mmap(host_file, vma);
+	if (err)
+		return err;
 
-	return host_file->f_op->mmap(host_file, vma);
+	/* the mmap operation on the host_file might have changed the mappings.
+	 * (especially filesystems that looked at how Coda used to set up the
+	 * redirections) We could try to fix it up and hope we were the only
+	 * opener or use BUG_ON() to track down any offenders. */
+	BUG_ON(coda_file->f_mapping != host_file->f_mapping);
+
+	return 0;
 }
 
 int coda_open(struct inode *coda_inode, struct file *coda_file)
@@ -132,6 +133,7 @@ int coda_open(struct inode *coda_inode, struct file *coda_file)
 	unsigned short flags = coda_file->f_flags & (~O_EXCL);
 	unsigned short coda_flags = coda_flags_to_cflags(flags);
 	struct coda_file_info *cfi;
+	struct coda_inode_info *cii;
 
 	lock_kernel();
 	coda_vfs_stat.open++;
@@ -158,11 +160,29 @@ int coda_open(struct inode *coda_inode, struct file *coda_file)
 	host_file->f_flags |= coda_file->f_flags & (O_APPEND | O_SYNC);
 
 	cfi->cfi_magic = CODA_MAGIC;
-	cfi->cfi_mapcount = 0;
 	cfi->cfi_container = host_file;
 
 	BUG_ON(coda_file->private_data != NULL);
 	coda_file->private_data = cfi;
+
+	/* if we haven't redirected the mmap redirection yet, do it here. */
+	if (coda_inode->i_mapping == &coda_inode->i_data) {
+		coda_inode->i_mapping = host_file->f_mapping;
+		coda_file->f_mapping = host_file->f_mapping;
+	}
+
+	/* keep track of the number of file handles that could map the
+	 * container file */
+	if (coda_file->f_mapping == host_file->f_mapping) {
+		cii = ITOC(coda_inode);
+		cii->c_mapcount++;
+	} else {
+		/* container file changed on a previously opened inode. Reset
+		 * the mapping as we can not allow mmap to succeed as it would
+		 * see the old file through mmap, but the new one through
+		 * read/write. */
+		coda_file->f_mapping = &coda_inode->i_data;
+	}
 
 	unlock_kernel();
 	return 0;
@@ -217,7 +237,6 @@ int coda_release(struct inode *coda_inode, struct file *coda_file)
 	unsigned short coda_flags = coda_flags_to_cflags(flags);
 	struct coda_file_info *cfi;
 	struct coda_inode_info *cii;
-	struct inode *host_inode;
 	int err = 0;
 
 	lock_kernel();
@@ -239,13 +258,10 @@ int coda_release(struct inode *coda_inode, struct file *coda_file)
 		err = venus_close(coda_inode->i_sb, coda_i2f(coda_inode),
 				  coda_flags, coda_file->f_uid);
 
-	host_inode = cfi->cfi_container->f_dentry->d_inode;
-	cii = ITOC(coda_inode);
-
-	/* did we mmap this file? */
-	if (coda_inode->i_mapping == &host_inode->i_data) {
-		cii->c_mapcount -= cfi->cfi_mapcount;
-		if (!cii->c_mapcount)
+	/* did we redirect the mapping for this file? */
+	if (coda_file->f_mapping != &coda_inode->i_data) {
+		cii = ITOC(coda_inode);
+		if (--cii->c_mapcount == 0)
 			coda_inode->i_mapping = &coda_inode->i_data;
 	}
 
@@ -278,9 +294,9 @@ int coda_fsync(struct file *coda_file, struct dentry *coda_dentry, int datasync)
 	if (host_file->f_op && host_file->f_op->fsync) {
 		host_dentry = host_file->f_dentry;
 		host_inode = host_dentry->d_inode;
-		down(&host_inode->i_sem);
+		/* we don't need to call down(&host_inode->i_sem) as sys_fsync
+		 * already locked coda_file->f_mapping->host->i_sem. */
 		err = host_file->f_op->fsync(host_file, host_dentry, datasync);
-		up(&host_inode->i_sem);
 	}
 
 	if ( !err && !datasync ) {
