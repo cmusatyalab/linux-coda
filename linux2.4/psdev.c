@@ -343,10 +343,11 @@ static int coda_psdev_release(struct inode * inode, struct file * file)
         
         /* Wakeup clients so they can return. */
 	CDEBUG(D_PSDEV, "wake up pending clients\n");
-	lh = vcp->vc_pending.next;
-	next = lh;
+	lh = &vcp->vc_pending;
+	next = lh->next;
 	while ( (lh = next) != &vcp->vc_pending) {
 		next = lh->next;
+		list_del(&lh);
 		req = list_entry(lh, struct upc_req, uc_chain);
 		/* Async requests need to be freed here */
 		if (req->uc_flags & REQ_ASYNC) {
@@ -359,8 +360,11 @@ static int coda_psdev_release(struct inode * inode, struct file * file)
         }
         
 	lh = &vcp->vc_processing;
+	next = lh->next;
 	CDEBUG(D_PSDEV, "wake up processing clients\n");
-	while ( (lh = lh->next) != &vcp->vc_processing) {
+	while ( (lh = next) != &vcp->vc_processing) {
+		next = lh->next;
+		list_del(&lh);
 		req = list_entry(lh, struct upc_req, uc_chain);
 		req->uc_flags |= REQ_ABORT;
 	        wake_up(&req->uc_sleep);
