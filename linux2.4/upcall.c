@@ -648,10 +648,6 @@ static inline unsigned long coda_waitfor_upcall(struct upc_req *vmp,
 		else
 			set_current_state(TASK_UNINTERRUPTIBLE);
 
-                /* venus died */
-                if ( !vcommp->vc_inuse )
-                        break;
-
 		/* got a reply */
 		if ( vmp->uc_flags & ( REQ_WRITE | REQ_ABORT ) )
 			break;
@@ -659,12 +655,16 @@ static inline unsigned long coda_waitfor_upcall(struct upc_req *vmp,
 		if ( !coda_hard && vmp->uc_opcode != CODA_CLOSE && signal_pending(current) ) {
 			/* if this process really wants to die, let it go */
 			if ( sigismember(&(current->pending.signal), SIGKILL) ||
-			     sigismember(&(current->pending.signal), SIGINT) )
+			     sigismember(&(current->pending.signal), SIGINT) ) {
+				list_del(&req->uc_chain);
 				break;
+			}
 			/* signal is present: after timeout always return 
 			   really smart idea, probably useless ... */
-			if ( jiffies - vmp->uc_posttime > coda_timeout * HZ )
+			if ( jiffies - vmp->uc_posttime > coda_timeout * HZ ) {
+				list_del(&req->uc_chain);
 				break; 
+			}
 		}
 		schedule();
 	}
@@ -733,7 +733,7 @@ static int coda_upcall(struct coda_sb_info *sbi,
 	((union inputArgs *)buffer)->ih.unique = req->uc_unique;
 
 	/* Append msg to pending queue and poke Venus. */
-	list_add(&(req->uc_chain), vcommp->vc_pending.prev);
+	list_add(&req->uc_chain, vcommp->vc_pending.prev);
         
 	CDEBUG(D_UPCALL, 
 	       "Proc %d wake Venus for(opc,uniq) =(%d,%d) msg at %p.zzz.\n",
@@ -776,7 +776,6 @@ static int coda_upcall(struct coda_sb_info *sbi,
 		CDEBUG(D_UPCALL, 
 		       "Interrupted before read:(op,un) (%d.%d), flags = %x\n",
 		       req->uc_opcode, req->uc_unique, req->uc_flags);
-		list_del(&(req->uc_chain));
 		/* perhaps the best way to convince the app to
 		   give up? */
 		error = -EINTR;
@@ -791,7 +790,6 @@ static int coda_upcall(struct coda_sb_info *sbi,
 			   "Sending Venus a signal: op = %d.%d, flags = %x\n",
 			   req->uc_opcode, req->uc_unique, req->uc_flags);
 		    
-		    list_del(&(req->uc_chain));
 		    error = -ENOMEM;
 		    sig_req = upc_alloc();
 		    if (!sig_req) goto exit;
