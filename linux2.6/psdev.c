@@ -101,9 +101,7 @@ static ssize_t coda_psdev_write(struct file *file, const char __user *buf,
 				size_t nbytes, loff_t *off)
 {
         struct venus_comm *vcp = (struct venus_comm *) file->private_data;
-        struct upc_req *req = NULL;
-        struct upc_req *tmp;
-	struct list_head *lh;
+        struct upc_req *tmp, *req = NULL;
 	struct coda_in_hdr hdr;
 	ssize_t retval = 0, count = 0;
 	int error;
@@ -158,13 +156,13 @@ static ssize_t coda_psdev_write(struct file *file, const char __user *buf,
         
 	/* Look for the message on the processing queue. */
 	lock_kernel();
-	list_for_each(lh, &vcp->vc_processing) {
-		tmp = list_entry(lh, struct upc_req , uc_chain);
-		if (tmp->uc_unique == hdr.unique) {
-			req = tmp;
-			list_del(&req->uc_chain);
-			break;
-		}
+	list_for_each_entry(tmp, &vcp->vc_processing, uc_chain) {
+		if (tmp->uc_unique != hdr.unique)
+			continue;
+
+		req = tmp;
+		list_del(&req->uc_chain);
+		break;
 	}
 	unlock_kernel();
 
