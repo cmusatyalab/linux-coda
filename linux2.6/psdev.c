@@ -262,7 +262,7 @@ static ssize_t coda_psdev_read(struct file * file, char __user * buf,
 	/* If request was not a signal, enqueue and don't free */
 	if (!(req->uc_flags & REQ_ASYNC)) {
 		req->uc_flags |= REQ_READ;
-		list_add(&(req->uc_chain), vcp->vc_processing.prev);
+		list_add_tail(&req->uc_chain, &vcp->vc_processing);
 		goto out;
 	}
 
@@ -276,33 +276,31 @@ out:
 static int coda_psdev_open(struct inode * inode, struct file * file)
 {
         struct venus_comm *vcp;
-	int idx;
+	int idx, err;
+
+	idx = iminor(inode);
+	if(idx < 0 || idx >= MAX_CODADEVS)
+		return -ENODEV;
 
 	lock_kernel();
-	idx = iminor(inode);
-	if(idx >= MAX_CODADEVS) {
-		unlock_kernel();
-		return -ENODEV;
-	}
 
+	err = -EBUSY;
 	vcp = &coda_comms[idx];
-	if(vcp->vc_inuse) {
-		unlock_kernel();
-		return -EBUSY;
-	}
-	
-	if (!vcp->vc_inuse++) {
+	if(!vcp->vc_inuse) {
+		vcp->vc_inuse++;
+
 		INIT_LIST_HEAD(&vcp->vc_pending);
 		INIT_LIST_HEAD(&vcp->vc_processing);
 		init_waitqueue_head(&vcp->vc_waitq);
 		vcp->vc_sb = NULL;
 		vcp->vc_seq = 0;
+
+		file->private_data = vcp;
+		err = 0;
 	}
-	
-	file->private_data = vcp;
 
 	unlock_kernel();
-        return 0;
+	return err;
 }
 
 
@@ -311,20 +309,17 @@ static int coda_psdev_release(struct inode * inode, struct file * file)
         struct venus_comm *vcp = (struct venus_comm *) file->private_data;
         struct upc_req *req, *tmp;
 
-	lock_kernel();
-	if ( !vcp->vc_inuse ) {
-		unlock_kernel();
+	if (!vcp || !vcp->vc_inuse) {
 		printk("psdev_release: Not open.\n");
 		return -1;
 	}
 
-	if (--vcp->vc_inuse) {
-		unlock_kernel();
-		return 0;
-	}
-        
+	lock_kernel();
+
         /* Wakeup clients so they can return. */
 	list_for_each_entry_safe(req, tmp, &vcp->vc_pending, uc_chain) {
+		list_del(&req->uc_chain);
+
 		/* Async requests need to be freed here */
 		if (req->uc_flags & REQ_ASYNC) {
 			CODA_FREE(req->uc_data, sizeof(struct coda_in_hdr));
@@ -335,15 +330,19 @@ static int coda_psdev_release(struct inode * inode, struct file * file)
 		wake_up(&req->uc_sleep);
         }
         
-	list_for_each_entry(req, &vcp->vc_processing, uc_chain) {
+	list_for_each_entry_safe(req, tmp, &vcp->vc_processing, uc_chain) {
+		list_del(&req->uc_chain);
+
 		req->uc_flags |= REQ_ABORT;
 	        wake_up(&req->uc_sleep);
         }
 
+	vcp->vc_inuse--;
 	unlock_kernel();
+
+	file->private_data = NULL;
 	return 0;
 }
-
 
 static struct file_operations coda_psdev_fops = {
 	.owner		= THIS_MODULE,
@@ -368,10 +367,11 @@ static int init_coda_psdev(void)
 		err = PTR_ERR(coda_psdev_class);
 		goto out_chrdev;
 	}		
+	for (i = 0; i < MAX_CODADEVS; i++)
+		class_simple_device_add(coda_psdev_class, MKDEV(CODA_PSDEV_MAJOR,i), NULL, "cfs%d", i);
+
 	devfs_mk_dir ("coda");
 	for (i = 0; i < MAX_CODADEVS; i++) {
-		class_simple_device_add(coda_psdev_class, MKDEV(CODA_PSDEV_MAJOR,i), 
-				NULL, "cfs%d", i);
 		err = devfs_mk_cdev(MKDEV(CODA_PSDEV_MAJOR, i),
 				S_IFCHR|S_IRUSR|S_IWUSR, "coda/%d", i);
 		if (err)
@@ -381,6 +381,10 @@ static int init_coda_psdev(void)
 	goto out;
 
 out_class:
+	for (i--; i >= 0; i--)
+		devfs_remove("coda/%d", i);
+	devfs_remove("coda");
+
 	for (i = 0; i < MAX_CODADEVS; i++) 
 		class_simple_device_remove(MKDEV(CODA_PSDEV_MAJOR, i));
 	class_simple_destroy(coda_psdev_class);
