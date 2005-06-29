@@ -69,9 +69,9 @@ static int do_reset_coda_vfs_stats( ctl_table * table, int write,
 	return 0;
 }
 
-static int do_reset_coda_cache_inv_stats( ctl_table * table, int write, 
+static int do_reset_coda_cache_inv_stats( ctl_table * table, int write,
 					  struct file * filp,
-					  void __user * buffer, 
+					  void __user * buffer,
 					  size_t * lenp, loff_t * ppos )
 {
 	if ( write ) {

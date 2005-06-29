@@ -600,8 +600,8 @@ int venus_pioctl(struct super_block *sb, struct CodaFid *fid,
         }
 
 	/* Copy out the OUT buffer. */
-	if (copy_to_user(data->vi.out, 
-			 (char *)outp + (long)outp->coda_ioctl.data, 
+	if (copy_to_user(data->vi.out,
+			 (char *)outp + (long)outp->coda_ioctl.data,
 			 outp->coda_ioctl.len)) {
 		error = -EFAULT;
 		goto exit;
