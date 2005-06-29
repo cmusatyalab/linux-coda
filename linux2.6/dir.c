@@ -98,9 +98,8 @@ struct file_operations coda_dir_operations = {
 /* access routines: lookup, readlink, permission */
 static struct dentry *coda_lookup(struct inode *dir, struct dentry *entry, struct nameidata *nd)
 {
-	struct inode *res_inode = NULL;
+	struct inode *inode = NULL;
 	struct CodaFid resfid = { { 0, } };
-	int dropme = 0; /* to indicate entry should not be cached */
 	int type = 0;
 	int error = 0;
 	const char *name = entry->d_name.name;
@@ -112,44 +111,32 @@ static struct dentry *coda_lookup(struct inode *dir, struct dentry *entry, struc
 		return ERR_PTR(-ENAMETOOLONG);
 	}
 
-	lock_kernel();
         /* control object, create inode on the fly */
         if (coda_isroot(dir) && coda_iscontrol(name, length)) {
-	        error = coda_cnode_makectl(&res_inode, dir->i_sb);
-		dropme = 1;
+	        error = coda_cnode_makectl(&inode, dir->i_sb);
+		type = CODA_NOCACHE;
                 goto exit;
         }
 
+	lock_kernel();
+
 	error = venus_lookup(dir->i_sb, coda_i2f(dir), 
-			     (const char *)name, length, &type, &resfid);
+			     name, length, &type, &resfid);
 
-	res_inode = NULL;
-	if (!error) {
-		if (type & CODA_NOCACHE) {
-			type &= (~CODA_NOCACHE);
-			dropme = 1;
-		}
+	if (!error)
+	    	error = coda_cnode_make(&inode, &resfid, dir->i_sb);
 
-	    	error = coda_cnode_make(&res_inode, &resfid, dir->i_sb);
-		if (error) {
-			unlock_kernel();
-			return ERR_PTR(error);
-		}
-	} else if (error != -ENOENT) {
-		unlock_kernel();
+	unlock_kernel();
+
+	if (error && error != -ENOENT)
 		return ERR_PTR(error);
-	}
 
 exit:
-	entry->d_time = 0;
 	entry->d_op = &coda_dentry_operations;
-	d_add(entry, res_inode);
-	if ( dropme ) {
-		d_drop(entry);
-		coda_flag_inode(res_inode, C_VATTR);
-	}
-	unlock_kernel();
-        return NULL;
+	if (inode && (type & CODA_NOCACHE))
+		coda_flag_inode(inode, C_VATTR | C_PURGE);
+
+	return d_splice_alias(inode, entry);
 }
 
 
