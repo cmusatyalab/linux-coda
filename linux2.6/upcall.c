@@ -38,9 +38,6 @@
 #include <linux/coda_cache.h>
 #include <linux/coda_proc.h> 
 
-#define upc_alloc() kmalloc(sizeof(struct upc_req), GFP_KERNEL)
-#define upc_free(r) kfree(r)
-
 static int coda_upcall(struct coda_sb_info *mntinfo, int inSize, int *outSize, 
 		       union inputArgs *buffer);
 

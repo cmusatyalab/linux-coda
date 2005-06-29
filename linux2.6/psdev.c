@@ -48,8 +48,6 @@
 #include <linux/coda_psdev.h>
 #include <linux/coda_proc.h>
 
-#define upc_free(r) kfree(r)
-
 /* 
  * Coda stuff
  */
