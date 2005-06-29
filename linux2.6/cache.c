@@ -7,21 +7,10 @@
  * to the Coda project http://www.coda.cs.cmu.edu/ <coda@cs.cmu.edu>.
  */
 
-#include <linux/types.h>
-#include <linux/kernel.h>
-#include <linux/time.h>
 #include <linux/fs.h>
-#include <linux/stat.h>
-#include <linux/errno.h>
-#include <asm/uaccess.h>
-#include <linux/string.h>
-#include <linux/list.h>
 
-#include <linux/coda.h>
 #include <linux/coda_linux.h>
 #include <linux/coda_psdev.h>
-#include <linux/coda_fs_i.h>
-#include <linux/coda_cache.h>
 
 static atomic_t permission_epoch = ATOMIC_INIT(0);
 

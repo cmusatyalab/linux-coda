@@ -9,27 +9,15 @@
  */
 
 #include <linux/module.h>
-#include <linux/kernel.h>
-#include <linux/mm.h>
-#include <linux/string.h>
-#include <linux/stat.h>
-#include <linux/errno.h>
-#include <linux/unistd.h>
 #include <linux/smp_lock.h>
 #include <linux/file.h>
 #include <linux/vfs.h>
-#include <linux/namei.h>
-
-#include <asm/system.h>
-#include <asm/uaccess.h>
-
 #include <linux/fs.h>
-#include <linux/vmalloc.h>
+#include <linux/namei.h>
 
 #include <linux/coda.h>
 #include <linux/coda_linux.h>
 #include <linux/coda_psdev.h>
-#include <linux/coda_fs_i.h>
 #include <linux/coda_cache.h>
 
 #include "compat.h"

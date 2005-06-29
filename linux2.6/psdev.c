@@ -17,36 +17,19 @@
  *              Copyright (c) 1997 Carnegie-Mellon University
  */
 
+#include <linux/config.h>
 #include <linux/module.h>
-#include <linux/errno.h>
-#include <linux/kernel.h>
-#include <linux/major.h>
-#include <linux/time.h>
-#include <linux/slab.h>
-#include <linux/ioport.h>
-#include <linux/fcntl.h>
-#include <linux/delay.h>
-#include <linux/skbuff.h>
-#include <linux/proc_fs.h>
 #include <linux/devfs_fs_kernel.h>
-#include <linux/vmalloc.h>
 #include <linux/fs.h>
+#include <linux/pagemap.h>
 #include <linux/file.h>
 #include <linux/poll.h>
-#include <linux/init.h>
-#include <linux/list.h>
 #include <linux/smp_lock.h>
 #include <linux/device.h>
-#include <asm/io.h>
-#include <asm/system.h>
-#include <asm/poll.h>
-#include <asm/uaccess.h>
 
-#include <linux/coda.h>
 #include <linux/coda_linux.h>
 #include <linux/coda_fs_i.h>
 #include <linux/coda_psdev.h>
-#include <linux/coda_proc.h>
 
 /* 
  * Coda stuff

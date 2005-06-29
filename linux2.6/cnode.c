@@ -2,13 +2,7 @@
    (C) 1996 Peter Braam
    */
 
-#include <linux/types.h>
-#include <linux/string.h>
-#include <linux/time.h>
-
-#include <linux/coda.h>
 #include <linux/coda_linux.h>
-#include <linux/coda_fs_i.h>
 #include <linux/coda_psdev.h>
 
 static inline int coda_fideq(struct CodaFid *fid1, struct CodaFid *fid2)

@@ -12,23 +12,13 @@
  */
 
 #include <linux/config.h>
-#include <linux/time.h>
-#include <linux/mm.h>
 #include <linux/sysctl.h>
 #include <linux/proc_fs.h>
-#include <linux/slab.h>
-#include <linux/stat.h>
-#include <linux/ctype.h>
-#include <linux/bitops.h>
-#include <asm/uaccess.h>
-#include <linux/utsname.h>
 #include <linux/module.h>
 
 #include <linux/coda.h>
 #include <linux/coda_linux.h>
-#include <linux/coda_fs_i.h>
 #include <linux/coda_psdev.h>
-#include <linux/coda_cache.h>
 #include <linux/coda_proc.h>
 
 static struct ctl_table_header *fs_table_header;

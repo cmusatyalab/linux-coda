@@ -7,20 +7,11 @@
  * to the Coda project. Contact Peter Braam <coda@cs.cmu.edu>.
  */
 
-#include <linux/types.h>
-#include <linux/kernel.h>
-#include <linux/time.h>
 #include <linux/file.h>
 #include <linux/fs.h>
-#include <linux/stat.h>
-#include <linux/errno.h>
 #include <linux/smp_lock.h>
-#include <linux/string.h>
-#include <asm/uaccess.h>
 
-#include <linux/coda.h>
 #include <linux/coda_linux.h>
-#include <linux/coda_fs_i.h>
 #include <linux/coda_psdev.h>
 #include <linux/coda_proc.h>
 
