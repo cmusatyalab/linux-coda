@@ -18,6 +18,7 @@
 #include <linux/smp_lock.h>
 #include <linux/file.h>
 #include <linux/vfs.h>
+#include <linux/namei.h>
 
 #include <asm/system.h>
 #include <asm/uaccess.h>
@@ -101,71 +102,20 @@ static struct super_operations coda_super_operations =
 	.remount_fs	= coda_remount,
 };
 
-static int get_device_index(struct coda_mount_data *data)
-{
-	struct file *file;
-	struct inode *inode;
-	int idx;
-
-	if(data == NULL) {
-		printk("coda_read_super: Bad mount data\n");
-		return -1;
-	}
-
-	if(data->version != CODA_MOUNT_VERSION) {
-		printk("coda_read_super: Bad mount version\n");
-		return -1;
-	}
-
-	file = fget(data->fd);
-	inode = NULL;
-	if(file)
-		inode = file->f_dentry->d_inode;
-	
-	if(!inode || !S_ISCHR(inode->i_mode) ||
-	   imajor(inode) != CODA_PSDEV_MAJOR) {
-		if(file)
-			fput(file);
-
-		printk("coda_read_super: Bad file\n");
-		return -1;
-	}
-
-	idx = iminor(inode);
-	fput(file);
-
-	if(idx < 0 || idx >= MAX_CODADEVS) {
-		printk("coda_read_super: Bad minor number\n");
-		return -1;
-	}
-
-	return idx;
-}
-
 static int coda_fill_super(struct super_block *sb, void *data, int silent)
 {
         struct inode *root = NULL; 
-	struct venus_comm *vc = NULL;
+	struct venus_comm *vc = (struct venus_comm *)data;
 	struct CodaFid fid;
         int error;
-	int idx;
 
-	idx = get_device_index((struct coda_mount_data *) data);
-
-	/* Ignore errors in data, for backward compatibility */
-	if(idx == -1)
-		idx = 0;
-	
-	printk(KERN_INFO "coda_read_super: device index: %i\n", idx);
-
-	vc = &coda_comms[idx];
 	if (!vc->vc_inuse) {
-		printk("coda_read_super: No pseudo device\n");
+		printk("coda: CFS device not open, venus dead?\n");
 		return -EINVAL;
 	}
 
-        if ( vc->vc_sb ) {
-		printk("coda_read_super: Device already mounted\n");
+	if ( vc->vc_sb ) {
+		printk("coda: device already in use\n");
 		return -EBUSY;
 	}
 
@@ -290,12 +240,62 @@ static int coda_statfs(struct super_block *sb, struct kstatfs *buf)
 	return 0; 
 }
 
-/* init_coda: used by filesystems.c to register coda */
+static struct venus_comm *get_device(struct inode *inode)
+{
+	int idx;
 
+	if (!inode)
+		return NULL;
+
+	if (!S_ISCHR(inode->i_mode) || imajor(inode) != CODA_PSDEV_MAJOR) {
+		printk("coda_get_sb: Bad file\n");
+		return NULL;
+	}
+
+	idx = iminor(inode);
+	if (idx < 0 || idx >= MAX_CODADEVS) {
+		printk("coda_get_sb: Bad minor number\n");
+		return NULL;
+	}
+
+	return &coda_comms[idx];
+}
+
+/* init_coda: used by filesystems.c to register coda */
 static struct super_block *coda_get_sb(struct file_system_type *fs_type,
 	int flags, const char *dev_name, void *data)
 {
-	return get_sb_nodev(fs_type, flags, data, coda_fill_super);
+	struct coda_mount_data *md;
+	struct nameidata nd;
+	struct file *file;
+	struct venus_comm *vc = NULL;
+	int err;
+
+	err = path_lookup(dev_name, LOOKUP_FOLLOW, &nd);
+	if (!err) {
+		vc = get_device(nd.dentry->d_inode);
+		path_release(&nd);
+	}
+	if (vc)
+		goto mount;
+
+	md = (struct coda_mount_data *)data;
+	if (!md || md->version != CODA_MOUNT_VERSION) {
+		printk("coda: Bad mount data\n");
+		goto mount;
+	}
+
+	file = fget(md->fd);
+	if (file) {
+		vc = get_device(file->f_dentry->d_inode);
+		fput(file);
+	}
+
+mount:
+	if (!vc)
+		vc = &coda_comms[0];
+
+	return get_sb_nodev(fs_type, flags, vc, coda_fill_super);
 }
 
 struct file_system_type coda_fs_type = {
