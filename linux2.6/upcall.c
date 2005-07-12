@@ -73,11 +73,8 @@ int venus_rootfid(struct super_block *sb, struct CodaFid *fidp)
 
 	error = coda_upcall(coda_sbp(sb), insize, &outsize, inp);
 	
-	if (error) {
-	        printk("coda_get_rootfid: error %d\n", error);
-	} else {
+	if (!error)
 		*fidp = outp->coda_root.VFid;
-	}
 
 	CODA_FREE(inp, insize);
 	return error;
@@ -96,7 +93,8 @@ int venus_getattr(struct super_block *sb, struct CodaFid *fid,
 
         error = coda_upcall(coda_sbp(sb), insize, &outsize, inp);
 	
-	*attr = outp->coda_getattr.attr;
+	if (!error)
+		*attr = outp->coda_getattr.attr;
 
 	CODA_FREE(inp, insize);
         return error;
@@ -143,8 +141,10 @@ int venus_lookup(struct super_block *sb, struct CodaFid *fid,
 
         error = coda_upcall(coda_sbp(sb), insize, &outsize, inp);
 
-	*resfid = outp->coda_lookup.VFid;
-	*type = outp->coda_lookup.vtype;
+	if (!error) {
+		*resfid = outp->coda_lookup.VFid;
+		*type = outp->coda_lookup.vtype;
+	}
 
 	CODA_FREE(inp, insize);
 	return error;
@@ -241,7 +241,8 @@ int venus_open(struct super_block *sb, struct CodaFid *fid,
 
         error = coda_upcall(coda_sbp(sb), insize, &outsize, inp);
 
-	*fh = outp->coda_open_by_fd.fh;
+	if (!error)
+		*fh = outp->coda_open_by_fd.fh;
 
 	CODA_FREE(inp, insize);
 	return error;
@@ -269,8 +270,10 @@ int venus_mkdir(struct super_block *sb, struct CodaFid *dirfid,
         
         error = coda_upcall(coda_sbp(sb), insize, &outsize, inp);
 
-	*attrs = outp->coda_mkdir.attr;
-	*newfid = outp->coda_mkdir.VFid;
+	if (!error) {
+		*attrs = outp->coda_mkdir.attr;
+		*newfid = outp->coda_mkdir.VFid;
+	}
 
 	CODA_FREE(inp, insize);
 	return error;        
@@ -339,8 +342,10 @@ int venus_create(struct super_block *sb, struct CodaFid *dirfid,
                 
         error = coda_upcall(coda_sbp(sb), insize, &outsize, inp);
 
-	*attrs = outp->coda_create.attr;
-	*newfid = outp->coda_create.VFid;
+	if (!error) {
+		*attrs = outp->coda_create.attr;
+		*newfid = outp->coda_create.VFid;
+	}
 
 	CODA_FREE(inp, insize);
 	return error;        
@@ -408,7 +413,7 @@ int venus_readlink(struct super_block *sb, struct CodaFid *fid,
     
         error = coda_upcall(coda_sbp(sb), insize, &outsize, inp);
 	
-	if (! error) {
+	if (!error) {
                 retlen = outp->coda_readlink.count;
 		if ( retlen > *length )
 		        retlen = *length;
@@ -613,8 +618,6 @@ int venus_statfs(struct super_block *sb, struct kstatfs *sfs)
 		sfs->f_bavail = outp->coda_statfs.stat.f_bavail;
 		sfs->f_files  = outp->coda_statfs.stat.f_files;
 		sfs->f_ffree  = outp->coda_statfs.stat.f_ffree;
-	} else {
-		printk("coda_statfs: Venus returns: %d\n", error);
 	}
 
         CODA_FREE(inp, insize);
