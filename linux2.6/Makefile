@@ -27,9 +27,10 @@ all: ${KSRC}
 
 install: ${KSRC}
 	make ${coda_makeflags} modules_install
+	-/sbin/depmod -a
 
 clean:
-	rm -rf *.o .*.o.cmd *.ko .*.ko.cmd *.mod.c .tmp_versions
+	-rm -rf *.o .*.o.cmd *.ko .*.ko.cmd *.mod.c .tmp_versions
 
 ${KSRC}:
 	@echo ===
