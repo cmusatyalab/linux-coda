@@ -36,7 +36,6 @@ static int coda_rename(struct inode *old_inode, struct dentry *old_dentry,
 static int coda_readdir(struct file *file, void *dirent, filldir_t filldir);
 
 /* dentry ops */
-static int coda_dentry_revalidate(struct dentry *de, struct nameidata *nd);
 static int coda_dentry_delete(struct dentry *);
 
 /* support routines */
@@ -53,7 +52,6 @@ static int coda_return_EIO(void)
 
 static struct dentry_operations coda_dentry_operations =
 {
-	.d_revalidate	= coda_dentry_revalidate,
 	.d_delete	= coda_dentry_delete,
 };
 
@@ -123,9 +121,12 @@ static struct dentry *coda_lookup(struct inode *dir, struct dentry *entry, struc
 
 exit:
 	entry->d_op = &coda_dentry_operations;
-	if (inode && (type & CODA_NOCACHE))
-		coda_flag_inode(inode, C_VATTR | C_PURGE);
 
+	if ((type & CODA_NOCACHE) && inode) {
+		list_del_init(&entry->d_child);
+		entry->d_parent = entry;
+		entry->d_flags |= DCACHE_DISCONNECTED;
+	}
 	return d_splice_alias(inode, entry);
 }
 
@@ -161,7 +162,7 @@ static inline void coda_dir_changed(struct inode *dir, int link)
 #ifdef REQUERY_VENUS_FOR_MTIME
 	/* invalidate the directory cnode's attributes so we refetch the
 	 * attributes from venus next time the inode is referenced */
-	coda_flag_inode(dir, C_VATTR);
+	coda_flag_inode(dir);
 #else
 	/* optimistically we can also act as if our nose bleeds. The
          * granularity of the mtime is coarse anyways so we might actually be
@@ -404,10 +405,10 @@ static int coda_rename(struct inode *old_dir, struct dentry *old_dentry,
 
                         coda_dir_changed(old_dir, -link_adjust);
                         coda_dir_changed(new_dir,  link_adjust);
-			coda_flag_inode(new_dentry->d_inode, C_VATTR);
+			coda_flag_inode(new_dentry->d_inode);
 		} else {
-			coda_flag_inode(old_dir, C_VATTR);
-			coda_flag_inode(new_dir, C_VATTR);
+			coda_flag_inode(old_dir);
+			coda_flag_inode(new_dir);
                 }
 	}
 	unlock_kernel();
@@ -565,61 +566,18 @@ static int coda_venus_readdir(struct file *filp, filldir_t filldir,
 	return result ? result : ret;
 }
 
-/* called when a cache lookup succeeds */
-static int coda_dentry_revalidate(struct dentry *de, struct nameidata *nd)
-{
-	struct inode *inode = de->d_inode;
-	struct coda_inode_info *cii;
-
-	if (!inode)
-		return 1;
-	lock_kernel();
-	if (coda_isroot(inode))
-		goto out;
-	if (is_bad_inode(inode))
-		goto bad;
-
-	cii = ITOC(de->d_inode);
-	if (!(cii->c_flags & (C_PURGE | C_FLUSH)))
-		goto out;
-
-	shrink_dcache_parent(de);
-
-	/* propagate for a flush */
-	if (cii->c_flags & C_FLUSH) 
-		coda_flag_inode_children(inode, C_FLUSH);
-
-	if (atomic_read(&de->d_count) > 1)
-		/* pretend it's valid, but don't change the flags */
-		goto out;
-
-	/* clear the flags. */
-	cii->c_flags &= ~(C_VATTR | C_PURGE | C_FLUSH);
-
-bad:
-	unlock_kernel();
-	return 0;
-out:
-	unlock_kernel();
-	return 1;
-}
-
 /*
  * This is the callback from dput() when d_count is going to 0.
  * We use this to unhash dentries with bad inodes.
  */
 static int coda_dentry_delete(struct dentry * dentry)
 {
-	int flags;
-
 	if (!dentry->d_inode) 
 		return 0;
 
-	flags = (ITOC(dentry->d_inode)->c_flags) & C_PURGE;
-	if (is_bad_inode(dentry->d_inode) || flags) {
-		return 1;
-	}
-	return 0;
+	return (is_bad_inode(dentry->d_inode) ||
+		(dentry->d_flags & DCACHE_DISCONNECTED) || 
+		ITOC(dentry->d_inode)->c_flags & C_VATTR);
 }
 
 
@@ -643,7 +601,7 @@ int coda_revalidate_inode(struct dentry *dentry)
 	if ( !cii->c_flags )
 		goto ok;
 
-	if (cii->c_flags & (C_VATTR | C_PURGE | C_FLUSH)) {
+	if (cii->c_flags) {
 		error = venus_getattr(inode->i_sb, &(cii->c_fid), &attr);
 		if ( error )
 			goto return_bad;
@@ -667,8 +625,7 @@ int coda_revalidate_inode(struct dentry *dentry)
 		if (inode->i_ino != old_ino)
 			goto return_bad;
 		
-		coda_flag_inode_children(inode, C_FLUSH);
-		cii->c_flags &= ~(C_VATTR | C_PURGE | C_FLUSH);
+		cii->c_flags = 0;
 	}
 
 ok:

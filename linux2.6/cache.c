@@ -56,48 +56,51 @@ int coda_cache_check(struct inode *inode, int mask)
 
 
 /* Purging dentries and children */
-/* The following routines drop dentries which are not
-   in use and flag dentries which are in use to be 
-   zapped later.
-
-   The flags are detected by:
-   - coda_dentry_revalidate (for lookups) if the flag is C_PURGE
-   - coda_dentry_delete: to remove dentry from the cache when d_count
-     falls to zero
-   - an inode method coda_revalidate (for attributes) if the 
-     flag is C_VATTR
-*/
-
-/* this won't do any harm: just flag all children */
-static void coda_flag_children(struct dentry *parent, int flag)
+/* The following routine drops dentries which are not in use.  */
+int __d_detach(struct dentry *de)
 {
-	struct list_head *child;
-	struct dentry *de;
+	spin_lock(&de->d_lock);
 
-	spin_lock(&dcache_lock);
-	list_for_each(child, &parent->d_subdirs)
-	{
-		de = list_entry(child, struct dentry, d_child);
-		/* don't know what to do with negative dentries */
-		if ( ! de->d_inode ) 
-			continue;
-		coda_flag_inode(de->d_inode, flag);
+	if (!d_unhashed(de))
+		__d_drop(de);
+
+	if (!de->d_inode) {
+		spin_unlock(&de->d_lock);
+		return 0;
 	}
-	spin_unlock(&dcache_lock);
-	return; 
+
+	list_del_init(&de->d_child);
+	de->d_parent = de;
+	de->d_flags |= DCACHE_DISCONNECTED;
+	de->d_flags &= ~DCACHE_UNHASHED;
+	hlist_add_head(&de->d_hash, &de->d_sb->s_anon);
+
+	spin_unlock(&de->d_lock);
+	return 1;
 }
 
-void coda_flag_inode_children(struct inode *inode, int flag)
+void coda_flag_inode_children(struct inode *inode)
 {
-	struct dentry *alias_de;
+	struct list_head *child;
+	struct dentry *alias_de, *de;
 
-	if ( !inode || !S_ISDIR(inode->i_mode)) 
-		return; 
+	if (!inode)
+		return;
 
 	alias_de = d_find_alias(inode);
 	if (!alias_de)
 		return;
-	coda_flag_children(alias_de, flag);
+
+	spin_lock(&dcache_lock);
+restart:
+	list_for_each(child, &alias_de->d_subdirs)
+	{
+		de = list_entry(child, struct dentry, d_child);
+		if (__d_detach(de))
+			 goto restart;
+	}
+	spin_unlock(&dcache_lock);
+
 	shrink_dcache_parent(alias_de);
 	dput(alias_de);
 }

@@ -7,7 +7,7 @@
 #define CURRENT_TIME_SEC CURRENT_TIME
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 13)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 12)
 #define class_create(a,b)		class_simple_create(a,b)
 #define class_device_create(a,b,c,d,e)	class_simple_device_add(a,b,c,d,e)
 #define class_device_destroy(a,b)	class_simple_device_remove(b)

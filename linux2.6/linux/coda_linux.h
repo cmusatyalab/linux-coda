@@ -49,7 +49,6 @@ extern int coda_fake_statfs;
 /* this file:  heloers */
 static __inline__ struct CodaFid *coda_i2f(struct inode *);
 static __inline__ char *coda_i2s(struct inode *);
-static __inline__ void coda_flag_inode(struct inode *, int flag);
 char *coda_f2s(struct CodaFid *f);
 int coda_isroot(struct inode *i);
 int coda_iscontrol(const char *name, size_t length);
@@ -94,9 +93,9 @@ static __inline__ char *coda_i2s(struct inode *inode)
 }
 
 /* this will not zap the inode away */
-static __inline__ void coda_flag_inode(struct inode *inode, int flag)
+static __inline__ void coda_flag_inode(struct inode *inode)
 {
-	ITOC(inode)->c_flags |= flag;
+	ITOC(inode)->c_flags |= C_VATTR;
 }		
 
 #endif

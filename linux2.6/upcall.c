@@ -862,11 +862,7 @@ int coda_downcall(int opcode, union outputArgs * out, struct super_block *sb)
 
 	switch (opcode) {
 	case CODA_FLUSH:
-		coda_cache_clear_all(sb);
 		shrink_dcache_sb(sb);
-		if (sb->s_root->d_inode)
-			coda_flag_inode(sb->s_root->d_inode, C_FLUSH);
-		break;
 
 	case CODA_PURGEUSER:
 		coda_cache_clear_all(sb);
@@ -876,8 +872,8 @@ int coda_downcall(int opcode, union outputArgs * out, struct super_block *sb)
 		fid = &out->coda_zapdir.CodaFid;
 		inode = coda_fid_to_inode(fid, sb);
 		if (inode) {
-			coda_flag_inode_children(inode, C_PURGE);
-			coda_flag_inode(inode, C_VATTR);
+			coda_flag_inode(inode);
+			coda_flag_inode_children(inode);
 		}
 		break;
 
@@ -885,17 +881,15 @@ int coda_downcall(int opcode, union outputArgs * out, struct super_block *sb)
 		fid = &out->coda_zapfile.CodaFid;
 		inode = coda_fid_to_inode(fid, sb);
 		if (inode)
-			coda_flag_inode(inode, C_VATTR);
+			coda_flag_inode(inode);
 		break;
 
 	case CODA_PURGEFID:
 		fid = &out->coda_purgefid.CodaFid;
 		inode = coda_fid_to_inode(fid, sb);
 		if (inode) { 
-			coda_flag_inode_children(inode, C_PURGE);
-
-			/* catch the dentries later if some are still busy */
-			coda_flag_inode(inode, C_PURGE);
+			coda_flag_inode(inode);
+			coda_flag_inode_children(inode);
 			d_prune_aliases(inode);
 		}
 		break;
@@ -905,7 +899,7 @@ int coda_downcall(int opcode, union outputArgs * out, struct super_block *sb)
 		newfid = &out->coda_replace.NewFid;
 		inode = coda_fid_to_inode(fid, sb);
 		if (inode)
-		    coda_replace_fid(inode, fid, newfid);
+			coda_replace_fid(inode, fid, newfid);
 		break;
 	}
 

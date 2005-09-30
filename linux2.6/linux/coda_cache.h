@@ -17,6 +17,6 @@ void coda_cache_clear_all(struct super_block *sb);
 int coda_cache_check(struct inode *inode, int mask);
 
 /* for downcalls and attributes and lookups */
-void coda_flag_inode_children(struct inode *inode, int flag);
+void coda_flag_inode_children(struct inode *inode);
 
 #endif /* _CFSNC_HEADER_ */
