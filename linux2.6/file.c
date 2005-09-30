@@ -118,8 +118,6 @@ int coda_open(struct inode *coda_inode, struct file *coda_file)
 		error = -EIO;
 
 	if (error) {
-		if (host_file)
-			fput(host_file);
 		unlock_kernel();
 		return error;
 	}

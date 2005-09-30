@@ -236,8 +236,8 @@ int venus_open(struct super_block *sb, struct CodaFid *fid,
 	insize = SIZE(open_by_fd);
 	UPARG(CODA_OPEN_BY_FD);
 
-        inp->coda_open.VFid = *fid;
-        inp->coda_open.flags = flags;
+        inp->coda_open_by_fd.VFid = *fid;
+        inp->coda_open_by_fd.flags = flags;
 
         error = coda_upcall(coda_sbp(sb), insize, &outsize, inp);
 

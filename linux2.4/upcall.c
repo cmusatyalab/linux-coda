@@ -234,7 +234,8 @@ int venus_open(struct super_block *sb, struct CodaFid *fid,
 
         error = coda_upcall(coda_sbp(sb), insize, &outsize, inp);
 
-	*fh = outp->coda_open_by_fd.fh;
+	if (!error)
+		*fh = outp->coda_open_by_fd.fh;
 
 	CODA_FREE(inp, insize);
 	return error;
