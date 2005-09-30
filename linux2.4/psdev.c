@@ -206,7 +206,7 @@ static ssize_t coda_psdev_write(struct file *file, const char *buf,
 	if (req->uc_opcode == CODA_OPEN_BY_FD) {
 		struct coda_open_by_fd_out *outp =
 			(struct coda_open_by_fd_out *)req->uc_data;
-		outp->fh = fget(outp->fd);
+		outp->fh = outp->oh.result ? NULL : fget(outp->fd);
 	}
 
 	CDEBUG(D_PSDEV, 
@@ -347,7 +347,7 @@ static int coda_psdev_release(struct inode * inode, struct file * file)
 	next = lh->next;
 	while ( (lh = next) != &vcp->vc_pending) {
 		next = lh->next;
-		list_del(&lh);
+		list_del(lh);
 		req = list_entry(lh, struct upc_req, uc_chain);
 		/* Async requests need to be freed here */
 		if (req->uc_flags & REQ_ASYNC) {
@@ -364,7 +364,7 @@ static int coda_psdev_release(struct inode * inode, struct file * file)
 	CDEBUG(D_PSDEV, "wake up processing clients\n");
 	while ( (lh = next) != &vcp->vc_processing) {
 		next = lh->next;
-		list_del(&lh);
+		list_del(lh);
 		req = list_entry(lh, struct upc_req, uc_chain);
 		req->uc_flags |= REQ_ABORT;
 	        wake_up(&req->uc_sleep);

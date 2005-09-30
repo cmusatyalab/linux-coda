@@ -98,7 +98,7 @@ static struct dentry *coda_lookup(struct inode *dir, struct dentry *entry)
 	int dropme = 0; /* to indicate entry should not be cached */
 	int type = 0;
 	int error = 0;
-	const char *name = entry->d_name.name;
+	const char *name = (const char *)entry->d_name.name;
 	size_t length = entry->d_name.len;
 
 	memset(&resfid, 0, sizeof(struct CodaFid));
@@ -207,7 +207,7 @@ static inline void coda_dir_changed(struct inode *dir, int link)
 static int coda_create(struct inode *dir, struct dentry *de, int mode)
 {
         int error=0;
-	const char *name=de->d_name.name;
+	const char *name = (const char *)de->d_name.name;
 	int length=de->d_name.len;
 	struct inode *inode;
 	struct CodaFid newfid;
@@ -245,7 +245,7 @@ static int coda_create(struct inode *dir, struct dentry *de, int mode)
 static int coda_mknod(struct inode *dir, struct dentry *de, int mode, int rdev)
 {
         int error=0;
-	const char *name=de->d_name.name;
+	const char *name = (const char *)de->d_name.name;
 	int length=de->d_name.len;
 	struct inode *inode;
 	struct CodaFid newfid;
@@ -288,7 +288,7 @@ static int coda_mkdir(struct inode *dir, struct dentry *de, int mode)
 {
 	struct inode *inode;
 	struct coda_vattr attrs;
-	const char *name = de->d_name.name;
+	const char *name = (const char *)de->d_name.name;
 	int len = de->d_name.len;
 	int error;
 	struct CodaFid newfid;
@@ -332,7 +332,7 @@ static int coda_link(struct dentry *source_de, struct inode *dir_inode,
 	  struct dentry *de)
 {
 	struct inode *inode = source_de->d_inode;
-        const char * name = de->d_name.name;
+        const char * name = (const char *)de->d_name.name;
 	int len = de->d_name.len;
 	int error;
 
@@ -366,7 +366,7 @@ out:
 static int coda_symlink(struct inode *dir_inode, struct dentry *de,
 			const char *symname)
 {
-        const char *name = de->d_name.name;
+        const char *name = (const char *)de->d_name.name;
 	int len = de->d_name.len;
 	int symlen;
         int error=0;
@@ -402,7 +402,7 @@ static int coda_symlink(struct inode *dir_inode, struct dentry *de,
 int coda_unlink(struct inode *dir, struct dentry *de)
 {
         int error;
-	const char *name = de->d_name.name;
+	const char *name = (const char *)de->d_name.name;
 	int len = de->d_name.len;
 
 	coda_vfs_stat.unlink++;
@@ -424,7 +424,7 @@ int coda_unlink(struct inode *dir, struct dentry *de)
 
 int coda_rmdir(struct inode *dir, struct dentry *de)
 {
-	const char *name = de->d_name.name;
+	const char *name = (const char *)de->d_name.name;
 	int len = de->d_name.len;
         int error;
 
@@ -450,8 +450,8 @@ int coda_rmdir(struct inode *dir, struct dentry *de)
 static int coda_rename(struct inode *old_dir, struct dentry *old_dentry, 
 		       struct inode *new_dir, struct dentry *new_dentry)
 {
-        const char *old_name = old_dentry->d_name.name;
-        const char *new_name = new_dentry->d_name.name;
+        const unsigned char *old_name = old_dentry->d_name.name;
+        const unsigned char *new_name = new_dentry->d_name.name;
 	int old_length = old_dentry->d_name.len;
 	int new_length = new_dentry->d_name.len;
         int link_adjust = 0;
@@ -591,8 +591,8 @@ static int coda_venus_readdir(struct file *filp, filldir_t filldir,
 			break;
 		}
 		/* validate whether the directory file actually makes sense */
-		if (vdir->d_reclen < vdir_size + vdir->d_namlen ||
-		    vdir->d_namlen > CODA_MAXNAMLEN) {
+		/* always true (vdir->d_namlen > CODA_MAXNAMLEN) */
+		if (vdir->d_reclen < vdir_size + vdir->d_namlen) {
 			printk("coda_venus_readdir: Invalid dir: %ld\n",
 			       filp->f_dentry->d_inode->i_ino);
 			ret = -EBADF;
@@ -600,11 +600,11 @@ static int coda_venus_readdir(struct file *filp, filldir_t filldir,
 		}
 
 		name.len = vdir->d_namlen;
-		name.name = vdir->d_name;
+		name.name = (unsigned char *)vdir->d_name;
 
 		/* Make sure we skip '.' and '..', we already got those */
 		if (name.name[0] == '.' && (name.len == 1 ||
-		    (vdir->d_name[1] == '.' && name.len == 2)))
+		    (name.name[1] == '.' && name.len == 2)))
 			vdir->d_fileno = name.len = 0;
 
 		/* skip null entries */
@@ -617,8 +617,8 @@ static int coda_venus_readdir(struct file *filp, filldir_t filldir,
 			if (!ino) ino = vdir->d_fileno;
 
 			type = CDT2DT(vdir->d_type);
-			ret = filldir(dirent, name.name, name.len, filp->f_pos,
-				      ino, type); 
+			ret = filldir(dirent, (char *)name.name, name.len,
+				      filp->f_pos, ino, type); 
 			/* failure means no space for filling in this round */
 			if (ret < 0) break;
 			result++;

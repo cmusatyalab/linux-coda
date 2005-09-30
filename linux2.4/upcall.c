@@ -229,8 +229,8 @@ int venus_open(struct super_block *sb, struct CodaFid *fid,
 	insize = SIZE(open_by_fd);
 	UPARG(CODA_OPEN_BY_FD);
 
-        inp->coda_open.Fid = *fid;
-        inp->coda_open.flags = flags;
+        inp->coda_open_by_fd.Fid = *fid;
+        inp->coda_open_by_fd.flags = flags;
 
         error = coda_upcall(coda_sbp(sb), insize, &outsize, inp);
 
@@ -388,7 +388,7 @@ int venus_remove(struct super_block *sb, struct CodaFid *dirfid,
 }
 
 int venus_readlink(struct super_block *sb, struct CodaFid *fid, 
-		      char *buffer, int *length)
+		   char *buffer, int *length)
 { 
         union inputArgs *inp;
         union outputArgs *outp;
@@ -669,8 +669,6 @@ static inline unsigned long coda_waitfor_upcall(struct upc_req *vmp)
 	sigset_t old;
 	int blocked;
 
-	vmp->uc_posttime = jiffies;
-
 	if (coda_upcall_timestamping)
 		do_gettimeofday(&begin);
 
@@ -790,12 +788,9 @@ static int coda_upcall(struct coda_sb_info *sbi,
 	 * ENODEV.  */
 
 	/* Go to sleep.  Wake up on signals only after the timeout. */
-	runtime = coda_waitfor_upcall(req, vcommp);
+	runtime = coda_waitfor_upcall(req);
 	coda_upcall_stats(((union inputArgs *)buffer)->ih.opcode, runtime);
 
-	CDEBUG(D_TIMING, "opc: %d time: %ld uniq: %d size: %d\n",
-	       req->uc_opcode, jiffies - req->uc_posttime, 
-	       req->uc_unique, req->uc_outSize);
 	CDEBUG(D_UPCALL, 
 	       "..process %d woken up by Venus for req at %p, data at %p\n", 
 	       current->pid, req, req->uc_data);

@@ -27,7 +27,7 @@ static int coda_symlink_filler(struct file *file, struct page *page)
 	struct inode *inode = page->mapping->host;
 	int error;
 	struct coda_inode_info *cii;
-	unsigned int len = PAGE_SIZE;
+	int len = PAGE_SIZE;
 	char *p = kmap(page);
 
 	lock_kernel();
