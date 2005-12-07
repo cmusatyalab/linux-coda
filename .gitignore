@@ -1,0 +1,7 @@
+CVS
+.tmp_versions
+*.o
+*.o.flags
+*.cmd
+*.ko
+*.mod.c
