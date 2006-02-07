@@ -12,6 +12,8 @@
 #include <linux/coda_linux.h>
 #include <linux/coda_psdev.h>
 
+#include "compat.h"
+
 static atomic_t permission_epoch = ATOMIC_INIT(0);
 
 /* replace or extend an acl cache hit */
@@ -77,7 +79,7 @@ static void coda_flag_children(struct dentry *parent, int flag)
 	spin_lock(&dcache_lock);
 	list_for_each(child, &parent->d_subdirs)
 	{
-		de = list_entry(child, struct dentry, d_child);
+		de = list_entry(child, struct dentry, du_child);
 		/* don't know what to do with negative dentries */
 		if ( ! de->d_inode ) 
 			continue;
