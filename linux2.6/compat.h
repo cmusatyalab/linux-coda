@@ -23,6 +23,9 @@
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16) /* 2.6.16-rc1 */
 #define du_child d_child
+#define i_mutex i_sem
+#define mutex_lock(x) down(x)
+#define mutex_unlock(x) up(x)
 #else
 #define du_child d_u.d_child
 #endif

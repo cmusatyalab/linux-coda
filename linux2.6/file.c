@@ -58,14 +58,14 @@ coda_file_write(struct file *coda_file, const char __user *buf, size_t count, lo
 		return -EINVAL;
 
 	host_inode = host_file->f_dentry->d_inode;
-	down(&coda_inode->i_sem);
+	mutex_lock(&coda_inode->i_mutex);
 
 	ret = host_file->f_op->write(host_file, buf, count, ppos);
 
 	coda_inode->i_size = host_inode->i_size;
 	coda_inode->i_blocks = (coda_inode->i_size + 511) >> 9;
 	coda_inode->i_mtime = coda_inode->i_ctime = CURRENT_TIME_SEC;
-	up(&coda_inode->i_sem);
+	mutex_unlock(&coda_inode->i_mutex);
 
 	return ret;
 }
@@ -244,8 +244,8 @@ int coda_fsync(struct file *coda_file, struct dentry *coda_dentry, int datasync)
 	if (host_file->f_op && host_file->f_op->fsync) {
 		host_dentry = host_file->f_dentry;
 		host_inode = host_dentry->d_inode;
-		/* we don't need to call down(&host_inode->i_sem) as sys_fsync
-		 * already locked coda_file->f_mapping->host->i_sem. */
+		/* we don't need to call mutex_lock(&host_inode->i_mutex) as
+		 * sys_fsync locked coda_file->f_mapping->host->i_mutex. */
 		err = host_file->f_op->fsync(host_file, host_dentry, datasync);
 	}
 
