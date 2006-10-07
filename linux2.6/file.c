@@ -150,7 +150,12 @@ int coda_open(struct inode *coda_inode, struct file *coda_file)
 	return 0;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18) /* 2.6.18-rc1 */
 int coda_flush(struct file *coda_file)
+#else
+/* git commit 75e1fcc0b18df0a65ab113198e9dc0e98999a08c add POSIX lock owner */
+int coda_flush(struct file *coda_file, fl_owner_t id)
+#endif
 {
 	unsigned short flags = coda_file->f_flags & ~O_EXCL;
 	unsigned short coda_flags = coda_flags_to_cflags(flags);

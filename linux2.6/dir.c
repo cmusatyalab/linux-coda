@@ -282,8 +282,8 @@ static int coda_link(struct dentry *source_de, struct inode *dir_inode,
 	coda_dir_changed(dir_inode, 0);
 	atomic_inc(&inode->i_count);
 	d_instantiate(de, inode);
-	inode->i_nlink++;
-        
+	inc_nlink(inode);
+
 out:
 	unlock_kernel();
 	return(error);
@@ -338,17 +338,17 @@ int coda_unlink(struct inode *dir, struct dentry *de)
 	lock_kernel();
 	coda_vfs_stat.unlink++;
 
-        error = venus_remove(dir->i_sb, coda_i2f(dir), name, len);
-        if ( error ) {
-		unlock_kernel();
-                return error;
-        }
+	error = venus_remove(dir->i_sb, coda_i2f(dir), name, len);
+	if ( error ) {
+	    unlock_kernel();
+	    return error;
+	}
 
 	coda_dir_changed(dir, 0);
-	de->d_inode->i_nlink--;
+	drop_nlink(de->d_inode);
 	unlock_kernel();
 
-        return 0;
+	return 0;
 }
 
 int coda_rmdir(struct inode *dir, struct dentry *de)
@@ -366,17 +366,17 @@ int coda_rmdir(struct inode *dir, struct dentry *de)
 	}
 	error = venus_rmdir(dir->i_sb, coda_i2f(dir), name, len);
 
-        if ( error ) {
-		unlock_kernel();
-                return error;
-        }
+	if ( error ) {
+	    unlock_kernel();
+	    return error;
+	}
 
 	coda_dir_changed(dir, -1);
-	de->d_inode->i_nlink--;
+	drop_nlink(de->d_inode);
 	d_delete(de);
 	unlock_kernel();
 
-        return 0;
+	return 0;
 }
 
 /* rename */
@@ -489,7 +489,7 @@ static int coda_venus_readdir(struct file *filp, filldir_t filldir,
 	ino_t ino;
 	int ret, i;
 
-	vdir = (struct venus_dirent *)kmalloc(sizeof(*vdir), GFP_KERNEL);
+	vdir = kmalloc(sizeof(*vdir), GFP_KERNEL);
 	if (!vdir) return -ENOMEM;
 
 	i = filp->f_pos;

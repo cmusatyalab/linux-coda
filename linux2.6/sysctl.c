@@ -11,7 +11,6 @@
  *
  */
 
-#include <linux/config.h>
 #include <linux/sysctl.h>
 #include <linux/proc_fs.h>
 #include <linux/module.h>

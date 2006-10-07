@@ -21,6 +21,8 @@
 #include <linux/coda_psdev.h>
 #include <linux/coda_fs_i.h>
 
+#include "compat.h"
+
 /* initialize the debugging variables */
 int coda_fake_statfs;
 
@@ -109,9 +111,12 @@ void coda_vattr_to_iattr(struct inode *inode, struct coda_vattr *attr)
 	if (attr->va_nlink != -1)
 	        inode->i_nlink = attr->va_nlink;
 	if (attr->va_size != -1)
-	        inode->i_size = attr->va_size;
+		inode->i_size = attr->va_size;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19) /* 2.6.19-rc1 */
+/* git commit ba52de123d454b57369f291348266d86f4b35070 remove i_blksize */
 	if (attr->va_blocksize != -1)
 		inode->i_blksize = attr->va_blocksize;
+#endif
 	if (attr->va_size != -1)
 		inode->i_blocks = (attr->va_size + 511) >> 9;
 	if (attr->va_atime.tv_sec != -1) 

@@ -86,7 +86,7 @@ static void coda_flag_children(struct dentry *parent, int flag)
 		coda_flag_inode(de->d_inode, flag);
 	}
 	spin_unlock(&dcache_lock);
-	return; 
+	return;
 }
 
 void coda_flag_inode_children(struct inode *inode, int flag)

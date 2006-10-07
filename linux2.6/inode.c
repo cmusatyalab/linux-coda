@@ -25,7 +25,13 @@
 /* VFS super_block ops */
 static void coda_clear_inode(struct inode *);
 static void coda_put_super(struct super_block *);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18) /* 2.6.18-rc1 */
 static int coda_statfs(struct super_block *sb, struct kstatfs *buf);
+#else
+/* git commit 726c334223180e3c0197cc980a432681370d4baf */
+static int coda_statfs(struct dentry *dentry, struct kstatfs *buf);
+#endif
+
 
 static kmem_cache_t * coda_inode_cachep;
 
@@ -69,8 +75,7 @@ int coda_init_inodecache(void)
 
 void coda_destroy_inodecache(void)
 {
-	if (kmem_cache_destroy(coda_inode_cachep))
-		printk(KERN_INFO "coda_inode_cache: not all structures were freed\n");
+	kmem_cache_destroy(coda_inode_cachep);
 }
 
 static int coda_remount(struct super_block *sb, int *flags, char *data)
@@ -201,10 +206,17 @@ struct inode_operations coda_file_inode_operations = {
 	.setattr	= coda_setattr,
 };
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18) /* 2.6.18-rc1 */
 static int coda_statfs(struct super_block *sb, struct kstatfs *buf)
 {
+#else
+/* git commit 726c334223180e3c0197cc980a432681370d4baf */
+static int coda_statfs(struct dentry *dentry, struct kstatfs *buf)
+{
+	struct super_block *sb = dentry->d_sb;
+#endif
 	int error;
-	
+
 	lock_kernel();
 
 	error = venus_statfs(sb, buf);
@@ -225,7 +237,7 @@ static int coda_statfs(struct super_block *sb, struct kstatfs *buf)
 	buf->f_bsize = 1024;
 	buf->f_namelen = CODA_MAXNAMLEN;
 
-	return 0; 
+	return 0;
 }
 
 static struct venus_comm *get_device(struct inode *inode)
@@ -250,8 +262,14 @@ static struct venus_comm *get_device(struct inode *inode)
 }
 
 /* init_coda: used by filesystems.c to register coda */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18) /* 2.6.18-rc1 */
 static struct super_block *coda_get_sb(struct file_system_type *fs_type,
 	int flags, const char *dev_name, void *data)
+#else
+/* git commit 454e2398be9b9fa30433fccc548db34d19aa9958 add vfsmount to get_sb */
+static struct super_block *coda_get_sb(struct file_system_type *fs_type,
+	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
+#endif
 {
 	struct coda_mount_data *md;
 	struct nameidata nd;
@@ -283,7 +301,7 @@ mount:
 	if (!vc)
 		vc = &coda_comms[0];
 
-	return get_sb_nodev(fs_type, flags, vc, coda_fill_super);
+	return get_sb_nodev(fs_type, flags, vc, coda_fill_super, mnt);
 }
 
 struct file_system_type coda_fs_type = {
