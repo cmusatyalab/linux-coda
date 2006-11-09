@@ -168,7 +168,11 @@ static inline void coda_dir_changed(struct inode *dir, int link)
          * right most of the time. Note: we only do this for directories. */
 	dir->i_mtime = dir->i_ctime = CURRENT_TIME_SEC;
 #endif
-	if (link)
+	/* directories really should have a linkcount >= 2. If the count is 0
+	 * the directory is deleted so there is no use updating it. If the
+	 * count is 1 then we have a userspace that is trying to outsmart GNU
+	 * find optimizations */
+	if (link && dir->i_nlink != 1)
 		dir->i_nlink += link;
 }
 
@@ -355,25 +359,20 @@ int coda_rmdir(struct inode *dir, struct dentry *de)
 {
 	const char *name = de->d_name.name;
 	int len = de->d_name.len;
-        int error;
+	int error;
 
 	lock_kernel();
 	coda_vfs_stat.rmdir++;
 
-	if (!d_unhashed(de)) {
-		unlock_kernel();
-		return -EBUSY;
-	}
 	error = venus_rmdir(dir->i_sb, coda_i2f(dir), name, len);
+	if (!error) {
+		/* VFS can delete the child */
+		if (de->d_inode)
+			de->d_inode->i_nlink = 0;
 
-	if ( error ) {
-	    unlock_kernel();
-	    return error;
+		/* fix linkcount of the parent */
+		coda_dir_changed(dir, -1);
 	}
-
-	coda_dir_changed(dir, -1);
-	drop_nlink(de->d_inode);
-	d_delete(de);
 	unlock_kernel();
 
 	return 0;
