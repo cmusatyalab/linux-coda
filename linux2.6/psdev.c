@@ -376,8 +376,16 @@ out:
 }
 
 
-MODULE_AUTHOR("Peter J. Braam <braam@cs.cmu.edu>");
 MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Jan Harkes <jaharkes@cs.cmu.edu>");
+MODULE_DESCRIPTION("Coda Distributed File System VFS interface");
+MODULE_ALIAS_CHARDEV_MAJOR(67);
+
+#ifdef CONFIG_CODA_FS_OLD_API
+MODULE_VERSION("5.3.20");
+#else
+MODULE_VERSION("6.3");
+#endif
 
 extern int coda_init_inodecache(void);
 extern void coda_destroy_inodecache(void);
@@ -385,13 +393,6 @@ static int __init init_coda(void)
 {
 	int status;
 	int i;
-	printk(KERN_INFO "Coda Kernel/Venus communications, "
-#ifdef CONFIG_CODA_FS_OLD_API
-	       "v5.3.20"
-#else
-	       "v6.2"
-#endif
-	       ", coda@cs.cmu.edu\n");
 
 	status = coda_init_inodecache();
 	if (status)
