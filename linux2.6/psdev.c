@@ -384,7 +384,7 @@ MODULE_ALIAS_CHARDEV_MAJOR(67);
 #ifdef CONFIG_CODA_FS_OLD_API
 MODULE_VERSION("5.3.20");
 #else
-MODULE_VERSION("6.3");
+MODULE_VERSION("6.5");
 #endif
 
 extern int coda_init_inodecache(void);
