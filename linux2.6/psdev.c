@@ -19,7 +19,6 @@
 
 #include <linux/config.h>
 #include <linux/module.h>
-#include <linux/devfs_fs_kernel.h>
 #include <linux/fs.h>
 #include <linux/pagemap.h>
 #include <linux/file.h>

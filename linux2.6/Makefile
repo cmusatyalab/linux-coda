@@ -6,7 +6,7 @@
 obj-$(CONFIG_CODA_FS) += coda.o
 
 coda-objs := psdev.o cache.o cnode.o inode.o dir.o file.o upcall.o \
-	     coda_linux.o symlink.o pioctl.o sysctl.o 
+	     coda_linux.o symlink.o pioctl.o sysctl.o
 
 #
 # This makes the makefile function outside of the kernel
@@ -18,9 +18,8 @@ KSRC ?= /lib/modules/${KVER}/build
 pwd  := $(shell pwd)
 
 coda_makeflags := CONFIG_CODA_FS=m \
-		  CPPFLAGS="-D__KERNEL__ -I${pwd} -Iinclude" \
-		  INSTALL_MOD_DIR=kernel/fs/coda \
-		  -C ${KSRC} M=${pwd}
+	CPPFLAGS="-D__KERNEL__ -I${pwd} -Iinclude -include linux/config.h" \
+	INSTALL_MOD_DIR=kernel/fs/coda -C ${KSRC} M=${pwd}
 
 all: ${KSRC}
 	make ${coda_makeflags}

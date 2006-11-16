@@ -267,8 +267,8 @@ static struct super_block *coda_get_sb(struct file_system_type *fs_type,
 	int flags, const char *dev_name, void *data)
 #else
 /* git commit 454e2398be9b9fa30433fccc548db34d19aa9958 add vfsmount to get_sb */
-static struct super_block *coda_get_sb(struct file_system_type *fs_type,
-	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
+static int coda_get_sb(struct file_system_type *fs_type, int flags,
+		       const char *dev_name, void *data, struct vfsmount *mnt)
 #endif
 {
 	struct coda_mount_data *md;

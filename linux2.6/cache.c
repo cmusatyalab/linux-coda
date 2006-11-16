@@ -7,8 +7,6 @@
  * to the Coda project http://www.coda.cs.cmu.edu/ <coda@cs.cmu.edu>.
  */
 
-#include <linux/fs.h>
-
 #include <linux/coda_linux.h>
 #include <linux/coda_psdev.h>
 
