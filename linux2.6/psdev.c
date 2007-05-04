@@ -17,7 +17,6 @@
  *              Copyright (c) 1997 Carnegie-Mellon University
  */
 
-#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/fs.h>
 #include <linux/pagemap.h>

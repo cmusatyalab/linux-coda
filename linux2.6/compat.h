@@ -55,4 +55,9 @@ int coda_flush(struct file *coda_file, fl_owner_t id);
 #define inc_nlink(i)  (i)->i_nlink++
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20) /* 2.6.20-rc1 */
+/* git commit e94b1766097d53e6f3ccfb36c8baa562ffeda3fc remove SLAB_KERNEL */
+#define SLAB_KERNEL GFP_KERNEL
+#endif
+
 #endif /* _COMPAT_H_ */
