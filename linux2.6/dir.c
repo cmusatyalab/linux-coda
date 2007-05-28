@@ -15,8 +15,8 @@
 #include <linux/coda_psdev.h>
 #include <linux/coda_fs_i.h>
 #include <linux/coda_cache.h>
-#include <linux/coda_proc.h>
 
+#include "coda_int.h"
 #include "compat.h"
 
 /* dir inode-ops */
@@ -42,7 +42,6 @@ static int coda_dentry_delete(struct dentry *);
 /* support routines */
 static int coda_venus_readdir(struct file *filp, filldir_t filldir,
 			      void *dirent, struct dentry *dir);
-int coda_fsync(struct file *, struct dentry *dentry, int datasync);
 
 /* same as fs/bad_inode.c */
 static int coda_return_EIO(void)
@@ -139,8 +138,6 @@ int coda_permission(struct inode *inode, int mask, struct nameidata *nd)
 
 	lock_kernel();
 
-	coda_vfs_stat.permission++;
-
 	if (coda_cache_check(inode, mask))
 		goto out; 
 
@@ -197,7 +194,6 @@ static int coda_create(struct inode *dir, struct dentry *de, int mode, struct na
 	struct coda_vattr attrs;
 
 	lock_kernel();
-	coda_vfs_stat.create++;
 
 	if (coda_isroot(dir) && coda_iscontrol(name, length)) {
 		unlock_kernel();
@@ -237,7 +233,6 @@ static int coda_mkdir(struct inode *dir, struct dentry *de, int mode)
 	struct CodaFid newfid;
 
 	lock_kernel();
-	coda_vfs_stat.mkdir++;
 
 	if (coda_isroot(dir) && coda_iscontrol(name, len)) {
 		unlock_kernel();
@@ -279,7 +274,6 @@ static int coda_link(struct dentry *source_de, struct inode *dir_inode,
 	int error;
 
 	lock_kernel();
-	coda_vfs_stat.link++;
 
 	if (coda_isroot(dir_inode) && coda_iscontrol(name, len)) {
 		unlock_kernel();
@@ -314,7 +308,6 @@ static int coda_symlink(struct inode *dir_inode, struct dentry *de,
         int error=0;
         
 	lock_kernel();
-	coda_vfs_stat.symlink++;
 
 	if (coda_isroot(dir_inode) && coda_iscontrol(name, len)) {
 		unlock_kernel();
@@ -351,7 +344,6 @@ int coda_unlink(struct inode *dir, struct dentry *de)
 	int len = de->d_name.len;
 
 	lock_kernel();
-	coda_vfs_stat.unlink++;
 
 	error = venus_remove(dir->i_sb, coda_i2f(dir), name, len);
 	if ( error ) {
@@ -373,7 +365,6 @@ int coda_rmdir(struct inode *dir, struct dentry *de)
 	int error;
 
 	lock_kernel();
-	coda_vfs_stat.rmdir++;
 
 	error = venus_rmdir(dir->i_sb, coda_i2f(dir), name, len);
 	if (!error) {
@@ -401,7 +392,6 @@ static int coda_rename(struct inode *old_dir, struct dentry *old_dentry,
 	int error;
 
 	lock_kernel();
-	coda_vfs_stat.rename++;
 
 	error = venus_rename(old_dir->i_sb, coda_i2f(old_dir),
 			     coda_i2f(new_dir), old_length, new_length,
@@ -437,8 +427,6 @@ int coda_readdir(struct file *coda_file, void *dirent, filldir_t filldir)
 
 	host_file = CODA_FTOC(coda_file);
 	BUG_ON(!host_file);
-
-	coda_vfs_stat.readdir++;
 
 	host_inode = host_file->f_dentry->d_inode;
 	mutex_lock(&host_inode->i_mutex);

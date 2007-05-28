@@ -13,8 +13,8 @@
 
 #include <linux/coda_linux.h>
 #include <linux/coda_psdev.h>
-#include <linux/coda_proc.h>
 
+#include "coda_int.h"
 #include "compat.h"
 
 /* if CODA_STORE fails with EOPNOTSUPP, venus clearly doesn't support
@@ -110,7 +110,6 @@ int coda_open(struct inode *coda_inode, struct file *coda_file)
 	int error;
 
 	lock_kernel();
-	coda_vfs_stat.open++;
 
 	error = venus_open(coda_inode->i_sb, coda_i2f(coda_inode), coda_flags,
 			   &host_file); 
@@ -163,7 +162,6 @@ int coda_flush(struct file *coda_file, fl_owner_t id)
 	int err = 0, fcnt;
 
 	lock_kernel();
-	coda_vfs_stat.flush++;
 
 	/* last close semantics */
 	fcnt = file_count(coda_file);
@@ -201,7 +199,6 @@ int coda_release(struct inode *coda_inode, struct file *coda_file)
 	int err = 0;
 
 	lock_kernel();
-	coda_vfs_stat.release++;
  
 	if (!use_coda_close) {
 		err = venus_release(coda_inode->i_sb, coda_i2f(coda_inode),
@@ -243,8 +240,6 @@ int coda_fsync(struct file *coda_file, struct dentry *coda_dentry, int datasync)
 
 	host_file = CODA_FTOC(coda_file);
 	BUG_ON(!host_file);
-
-	coda_vfs_stat.fsync++;
 
 	if (host_file->f_op && host_file->f_op->fsync) {
 		host_dentry = host_file->f_dentry;

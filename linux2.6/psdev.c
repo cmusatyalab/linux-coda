@@ -1,4 +1,5 @@
 /*
+ *
  *      	An implementation of a loadable kernel mode driver providing
  *		multiple kernel/user space bidirectional communications links.
  *
@@ -29,14 +30,12 @@
 #include <linux/coda_fs_i.h>
 #include <linux/coda_psdev.h>
 
+#include "coda_int.h"
 #include "compat.h"
 
 /* 
  * Coda stuff
  */
-extern struct file_system_type coda_fs_type;
-
-/* statistics */
 int           coda_hard;         /* allows signals during upcalls */
 unsigned long coda_timeout = 30; /* .. secs, then signals will dequeue */
 
@@ -385,8 +384,6 @@ MODULE_VERSION("5.3.20");
 MODULE_VERSION("6.5");
 #endif
 
-extern int coda_init_inodecache(void);
-extern void coda_destroy_inodecache(void);
 static int __init init_coda(void)
 {
 	int status;
