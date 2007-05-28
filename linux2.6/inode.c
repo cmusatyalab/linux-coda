@@ -57,8 +57,12 @@ static void init_once(void * foo, kmem_cache_t * cachep, unsigned long flags)
 {
 	struct coda_inode_info *ei = (struct coda_inode_info *) foo;
 
+#ifdef SLAB_CTOR_VERIFY
+/* 50953fe9e00ebbeffa032a565ab2f08312d51a87  slab allocators: Remove SLAB_DEBUG_INITIAL flag */
+/* a35afb830f8d71ec211531aeb9a621b09a2efb39  Remove SLAB_CTOR_CONSTRUCTOR */
 	if ((flags & (SLAB_CTOR_VERIFY|SLAB_CTOR_CONSTRUCTOR)) ==
 	    SLAB_CTOR_CONSTRUCTOR)
+#endif
 		inode_init_once(&ei->vfs_inode);
 }
  

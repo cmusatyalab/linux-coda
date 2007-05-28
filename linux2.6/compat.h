@@ -60,4 +60,10 @@ int coda_flush(struct file *coda_file, fl_owner_t id);
 #define SLAB_KERNEL GFP_KERNEL
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 21) /* 2.6.21-rc1 */
+#define compat_register_sysctl_table(fs_table) register_sysctl_table(fs_table)
+#else
+#define compat_register_sysctl_table(fs_table) register_sysctl_table(fs_table,0)
+#endif
+
 #endif /* _COMPAT_H_ */

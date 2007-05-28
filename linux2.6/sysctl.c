@@ -20,15 +20,26 @@
 #include <linux/coda_psdev.h>
 #include <linux/coda_proc.h>
 
+#include "compat.h"
+
 static struct ctl_table_header *fs_table_header;
 
+/* fd6065b4fdcb64c43e400278ebd0cb56989871c3  sysctl: C99 convert coda ctl_tables and remove binary sysctls */
+#ifdef CTL_UNNUMBERED
+#define FS_CODA		 CTL_UNNUMBERED
+#define CODA_TIMEOUT	 CTL_UNNUMBERED
+#define CODA_HARD	 CTL_UNNUMBERED
+#define CODA_VFS	 CTL_UNNUMBERED
+#define CODA_CACHE_INV   CTL_UNNUMBERED
+#define CODA_FAKE_STATFS CTL_UNNUMBERED
+#else
 #define FS_CODA         1       /* Coda file system */
-
 #define CODA_TIMEOUT    3       /* timeout on upcalls to become intrble */
 #define CODA_HARD       5       /* mount type "hard" or "soft" */
 #define CODA_VFS 	 6       /* vfs statistics */
 #define CODA_CACHE_INV 	 9       /* cache invalidation statistics */
 #define CODA_FAKE_STATFS 10	 /* don't query venus for actual cache usage */
+#endif
 
 struct coda_vfs_stats		coda_vfs_stat;
 static struct coda_cache_inv_stats	coda_cache_inv_stat;
@@ -174,17 +185,53 @@ static int coda_cache_inv_stats_get_info( char * buffer, char ** start,
 }
 
 static ctl_table coda_table[] = {
- 	{CODA_TIMEOUT, "timeout", &coda_timeout, sizeof(int), 0644, NULL, &proc_dointvec},
- 	{CODA_HARD, "hard", &coda_hard, sizeof(int), 0644, NULL, &proc_dointvec},
- 	{CODA_VFS, "vfs_stats", NULL, 0, 0644, NULL, &do_reset_coda_vfs_stats},
- 	{CODA_CACHE_INV, "cache_inv_stats", NULL, 0, 0644, NULL, &do_reset_coda_cache_inv_stats},
- 	{CODA_FAKE_STATFS, "fake_statfs", &coda_fake_statfs, sizeof(int), 0600, NULL, &proc_dointvec},
-	{ 0 }
+	{
+		.ctl_name = CODA_TIMEOUT,
+		.procname = "timeout",
+		.data     = &coda_timeout,
+		.maxlen   = sizeof(int),
+		.mode     = 0644,
+		.proc_handler = &proc_dointvec
+	},
+	{
+		.ctl_name = CODA_HARD,
+		.procname = "hard",
+		.data     = &coda_hard,
+		.maxlen   = sizeof(int),
+		.mode     = 0644,
+		.proc_handler = &proc_dointvec
+	},
+	{
+		.ctl_name = CODA_VFS,
+		.procname = "vfs_stats",
+		.mode     = 0644,
+		.proc_handler = &do_reset_coda_vfs_stats
+	},
+	{
+		.ctl_name = CODA_CACHE_INV,
+		.procname = "cache_inv_stats",
+		.mode     = 0644,
+		.proc_handler = &do_reset_coda_cache_inv_stats
+	},
+	{
+		.ctl_name = CODA_FAKE_STATFS,
+		.procname = "fake_statfs",
+		.data     = &coda_fake_statfs,
+		.maxlen   = sizeof(int),
+		.mode     = 0600,
+		.proc_handler = &proc_dointvec
+	},
+	{}
 };
 
 static ctl_table fs_table[] = {
-       {FS_CODA, "coda",    NULL, 0, 0555, coda_table},
-       {0}
+	{
+		.ctl_name = FS_CODA,
+		.procname = "coda",
+		.mode	  = 0555,
+		.child    = coda_table
+	},
+	{}
 };
 
 
@@ -221,8 +268,8 @@ void coda_sysctl_init(void)
 
 #ifdef CONFIG_SYSCTL
 	if ( !fs_table_header )
-		fs_table_header = register_sysctl_table(fs_table, 0);
-#endif 
+		fs_table_header = compat_register_sysctl_table(fs_table);
+#endif
 }
 
 void coda_sysctl_clean(void) 
