@@ -6,8 +6,7 @@ To build a coda.o / coda.ko module for your Linux kernel:
 
 For 2.4/2.6 kernels:
 - make
-- su root
-- make install
+- sudo make install
 
 For 2.0/2.2 kernels:
 - These haven't been updated for 128-bit file identifiers and other API
