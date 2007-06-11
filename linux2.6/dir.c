@@ -378,7 +378,7 @@ int coda_rmdir(struct inode *dir, struct dentry *de)
 	}
 	unlock_kernel();
 
-	return 0;
+	return error;
 }
 
 /* rename */
