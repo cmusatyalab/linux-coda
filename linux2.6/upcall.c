@@ -32,18 +32,14 @@ static void *alloc_upcall(int opcode, int size)
 	union inputArgs *inp;
 
 	CODA_ALLOC(inp, union inputArgs *, size);
-        if (!inp)
+	if (!inp)
 		return ERR_PTR(-ENOMEM);
 
-        inp->ih.opcode = opcode;
+	inp->ih.opcode = opcode;
 	inp->ih.pid = current->pid;
 	inp->ih.pgid = process_group(current);
-#ifdef CONFIG_CODA_FS_OLD_API
-	memset(&inp->ih.cred, 0, sizeof(struct coda_cred));
-	inp->ih.cred.cr_fsuid = current->fsuid;
-#else
 	inp->ih.uid = current->fsuid;
-#endif
+
 	return (void*)inp;
 }
 
@@ -150,32 +146,23 @@ int venus_lookup(struct super_block *sb, struct CodaFid *fid,
 }
 
 int venus_store(struct super_block *sb, struct CodaFid *fid, int flags,
-                vuid_t uid)
+		vuid_t uid)
 {
-        union inputArgs *inp;
-        union outputArgs *outp;
-        int insize, outsize, error;
-#ifdef CONFIG_CODA_FS_OLD_API
-	struct coda_cred cred = { 0, };
-	cred.cr_fsuid = uid;
-#endif
-	
+	union inputArgs *inp;
+	union outputArgs *outp;
+	int insize, outsize, error;
+
 	insize = SIZE(store);
 	UPARG(CODA_STORE);
-	
-#ifdef CONFIG_CODA_FS_OLD_API
-	memcpy(&(inp->ih.cred), &cred, sizeof(cred));
-#else
-	inp->ih.uid = uid;
-#endif
-	
-        inp->coda_store.VFid = *fid;
-        inp->coda_store.flags = flags;
 
-        error = coda_upcall(coda_sbp(sb), insize, &outsize, inp);
+	inp->ih.uid = uid;
+	inp->coda_store.VFid = *fid;
+	inp->coda_store.flags = flags;
+
+	error = coda_upcall(coda_sbp(sb), insize, &outsize, inp);
 
 	CODA_FREE(inp, insize);
-        return error;
+	return error;
 }
 
 int venus_release(struct super_block *sb, struct CodaFid *fid, int flags)
@@ -197,32 +184,23 @@ int venus_release(struct super_block *sb, struct CodaFid *fid, int flags)
 }
 
 int venus_close(struct super_block *sb, struct CodaFid *fid, int flags,
-                vuid_t uid)
+		vuid_t uid)
 {
 	union inputArgs *inp;
 	union outputArgs *outp;
 	int insize, outsize, error;
-#ifdef CONFIG_CODA_FS_OLD_API
-	struct coda_cred cred = { 0, };
-	cred.cr_fsuid = uid;
-#endif
-	
+
 	insize = SIZE(release);
 	UPARG(CODA_CLOSE);
-	
-#ifdef CONFIG_CODA_FS_OLD_API
-	memcpy(&(inp->ih.cred), &cred, sizeof(cred));
-#else
-	inp->ih.uid = uid;
-#endif
-	
-        inp->coda_close.VFid = *fid;
-        inp->coda_close.flags = flags;
 
-        error = coda_upcall(coda_sbp(sb), insize, &outsize, inp);
+	inp->ih.uid = uid;
+	inp->coda_close.VFid = *fid;
+	inp->coda_close.flags = flags;
+
+	error = coda_upcall(coda_sbp(sb), insize, &outsize, inp);
 
 	CODA_FREE(inp, insize);
-        return error;
+	return error;
 }
 
 int venus_open(struct super_block *sb, struct CodaFid *fid,
