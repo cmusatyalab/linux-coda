@@ -374,10 +374,10 @@ out:
 
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Jan Harkes <jaharkes@cs.cmu.edu>");
+MODULE_AUTHOR("Jan Harkes, Peter Braam");
 MODULE_DESCRIPTION("Coda Distributed File System VFS interface");
 MODULE_ALIAS_CHARDEV_MAJOR(67);
-MODULE_VERSION("6.5");
+MODULE_VERSION("6.6");
 
 static int __init init_coda(void)
 {
