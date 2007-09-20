@@ -31,6 +31,11 @@
 #define du_child d_u.d_child
 #endif
 
+/* git commit 4b6a9316fab51af611dc8671f296734089f6a22a add SLAB_MEM_SPREAD */
+#ifndef SLAB_MEM_SPREAD
+#define SLAB_MEM_SPREAD 0
+#endif
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18) /* 2.6.18-rc1 */
 /* git commit 454e2398be9b9fa30433fccc548db34d19aa9958 add vfsmount to get_sb */
 #define get_sb_nodev(a,b,c,d,e) get_sb_nodev(a,b,c,d)
@@ -64,6 +69,11 @@ int coda_flush(struct file *coda_file, fl_owner_t id);
 #define compat_register_sysctl_table(fs_table) register_sysctl_table(fs_table)
 #else
 #define compat_register_sysctl_table(fs_table) register_sysctl_table(fs_table,0)
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 22) /* 2.6.21-rc1 */
+/* git commit 20c2df83d25c6a95affe6157a4c9cac4cf5ffaac - Remove slab dtors */
+#define kmem_cache_create(a,b,c,d,e) kmem_cache_create(a,b,c,d,e,NULL)
 #endif
 
 #endif /* _COMPAT_H_ */
