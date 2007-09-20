@@ -17,6 +17,7 @@
 #include <linux/fs.h>
 #include <linux/vfs.h>
 #include <linux/pagemap.h>
+#include <linux/sched.h>
 
 #include <linux/coda.h>
 #include <linux/coda_linux.h>
