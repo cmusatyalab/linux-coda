@@ -9,6 +9,7 @@
 
 #include <linux/coda_linux.h>
 #include <linux/coda_psdev.h>
+#include <linux/sched.h>
 
 #include "compat.h"
 
