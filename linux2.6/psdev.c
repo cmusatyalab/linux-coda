@@ -244,7 +244,7 @@ static ssize_t coda_psdev_read(struct file * file, char __user * buf,
 	}
 
 	CODA_FREE(req->uc_data, sizeof(struct coda_in_hdr));
-	upc_free(req);
+	kfree(req);
 out:
 	unlock_kernel();
 	return (count ? count : retval);
@@ -300,7 +300,7 @@ static int coda_psdev_release(struct inode * inode, struct file * file)
 		/* Async requests need to be freed here */
 		if (req->uc_flags & REQ_ASYNC) {
 			CODA_FREE(req->uc_data, sizeof(struct coda_in_hdr));
-			upc_free(req);
+			kfree(req);
 			continue;
 		}
 		req->uc_flags |= REQ_ABORT;

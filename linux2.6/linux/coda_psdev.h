@@ -85,9 +85,6 @@ struct upc_req {
 #define REQ_WRITE  0x4
 #define REQ_ABORT  0x8
 
-#define upc_alloc() kmalloc(sizeof(struct upc_req), GFP_KERNEL)
-#define upc_free(r) kfree(r)
-
 /*
  * Statistics
  */
