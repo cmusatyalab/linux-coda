@@ -81,5 +81,14 @@
 #define task_pgrp_nr(a)	process_group(a)
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 25) /* 2.6.25-rc2 */
+#define nd_path_dentry(nd)	(nd).dentry
+#else
+/* git commit 4ac9137858e08a19f29feac4e1f4df7c268b0ba5 embed path in nameidata*/
+#define nd_path_dentry(nd)	(nd).path.dentry
+/* git commit 1d957f9bf87da74f420424d16ece005202bbebd3 introduce path_put */
+#define path_release(ndp)	path_put(&(ndp)->path);
+#endif
+
 #endif /* _COMPAT_H_ */
 

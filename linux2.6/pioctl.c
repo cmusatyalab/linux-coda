@@ -15,6 +15,8 @@
 #include <linux/coda_linux.h>
 #include <linux/coda_psdev.h>
 
+#include "compat.h"
+
 /* pioctl ops */
 static int coda_ioctl_permission(struct inode *inode, int mask,
 				 struct nameidata *nd);
@@ -67,7 +69,7 @@ static int coda_pioctl(struct inode * inode, struct file * filp,
 	if ( error ) {
 		return error;
         } else {
-	        target_inode = nd.dentry->d_inode;
+	        target_inode = nd_path_dentry(nd)->d_inode;
 	}
 	
 	/* return if it is not a Coda inode */

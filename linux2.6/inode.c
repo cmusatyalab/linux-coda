@@ -287,7 +287,7 @@ static int coda_get_sb(struct file_system_type *fs_type, int flags,
 
 	err = path_lookup(dev_name, LOOKUP_FOLLOW, &nd);
 	if (!err) {
-		vc = get_device(nd.dentry->d_inode);
+		vc = get_device(nd_path_dentry(nd)->d_inode);
 		path_release(&nd);
 	}
 	if (vc)
