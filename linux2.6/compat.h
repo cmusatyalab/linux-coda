@@ -65,15 +65,15 @@ int coda_flush(struct file *coda_file, fl_owner_t id);
 #define SLAB_KERNEL GFP_KERNEL
 #endif
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 21) /* 2.6.21-rc1 */
-#define compat_register_sysctl_table(fs_table) register_sysctl_table(fs_table)
-#else
-#define compat_register_sysctl_table(fs_table) register_sysctl_table(fs_table,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 21) /* 2.6.21-rc1 */
+/* git commit 0b4d414714f0d2f922d39424b0c5c82ad900a381 remove insert_at_head */
+#define register_sysctl_table(fs_table) register_sysctl_table(fs_table,0)
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 22) /* 2.6.21-rc1 */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23) /* 2.6.23-rc1 */
 /* git commit 20c2df83d25c6a95affe6157a4c9cac4cf5ffaac - Remove slab dtors */
 #define kmem_cache_create(a,b,c,d,e) kmem_cache_create(a,b,c,d,e,NULL)
 #endif
 
 #endif /* _COMPAT_H_ */
+

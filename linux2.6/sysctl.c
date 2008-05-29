@@ -77,7 +77,7 @@ void coda_sysctl_init(void)
 {
 #ifdef CONFIG_SYSCTL
 	if ( !fs_table_header )
-		fs_table_header = compat_register_sysctl_table(fs_table);
+		fs_table_header = register_sysctl_table(fs_table);
 #endif
 }
 
