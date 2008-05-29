@@ -604,9 +604,9 @@ int venus_statfs(struct super_block *sb, struct kstatfs *sfs)
 
 /*
  * coda_upcall and coda_downcall routines.
- * 
+ *
  */
-static void block_signals(sigset_t *old)
+static void coda_block_signals(sigset_t *old)
 {
 	spin_lock_irq(&current->sighand->siglock);
 	*old = current->blocked;
@@ -620,7 +620,7 @@ static void block_signals(sigset_t *old)
 	spin_unlock_irq(&current->sighand->siglock);
 }
 
-static void unblock_signals(sigset_t *old)
+static void coda_unblock_signals(sigset_t *old)
 {
 	spin_lock_irq(&current->sighand->siglock);
 	current->blocked = *old;
@@ -645,7 +645,7 @@ static inline void coda_waitfor_upcall(struct upc_req *req)
 	sigset_t old;
 	int blocked;
 
-	block_signals(&old);
+	coda_block_signals(&old);
 	blocked = 1;
 
 	add_wait_queue(&req->uc_sleep, &wait);
@@ -662,7 +662,7 @@ static inline void coda_waitfor_upcall(struct upc_req *req)
 		if (blocked && time_after(jiffies, timeout) &&
 		    CODA_INTERRUPTIBLE(req))
 		{
-			unblock_signals(&old);
+			coda_unblock_signals(&old);
 			blocked = 0;
 		}
 
@@ -677,7 +677,7 @@ static inline void coda_waitfor_upcall(struct upc_req *req)
 			schedule();
 	}
 	if (blocked)
-		unblock_signals(&old);
+		coda_unblock_signals(&old);
 
 	remove_wait_queue(&req->uc_sleep, &wait);
 	set_current_state(TASK_RUNNING);
