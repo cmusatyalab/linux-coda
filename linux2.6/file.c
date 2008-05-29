@@ -17,10 +17,6 @@
 #include "coda_int.h"
 #include "compat.h"
 
-/* if CODA_STORE fails with EOPNOTSUPP, venus clearly doesn't support
- * CODA_STORE/CODA_RELEASE and we fall back on using the CODA_CLOSE upcall */
-static int use_coda_close;
-
 static ssize_t
 coda_file_read(struct file *coda_file, char __user *buf, size_t count, loff_t *ppos)
 {
@@ -165,48 +161,6 @@ int coda_open(struct inode *coda_inode, struct file *coda_file)
 	return 0;
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18) /* 2.6.18-rc1 */
-int coda_flush(struct file *coda_file)
-#else
-/* git commit 75e1fcc0b18df0a65ab113198e9dc0e98999a08c add POSIX lock owner */
-int coda_flush(struct file *coda_file, fl_owner_t id)
-#endif
-{
-	unsigned short flags = coda_file->f_flags & ~O_EXCL;
-	unsigned short coda_flags = coda_flags_to_cflags(flags);
-	struct inode *coda_inode;
-	int err = 0, fcnt;
-
-	lock_kernel();
-
-	/* last close semantics */
-	fcnt = file_count(coda_file);
-	if (fcnt > 1)
-		goto out;
-
-	/* No need to make an upcall when we have not made any modifications
-	 * to the file */
-	if ((coda_file->f_flags & O_ACCMODE) == O_RDONLY)
-		goto out;
-
-	if (use_coda_close)
-		goto out;
-
-	coda_inode = coda_file->f_dentry->d_inode;
-
-	err = venus_store(coda_inode->i_sb, coda_i2f(coda_inode), coda_flags,
-			  coda_file->f_uid);
-
-	if (err == -EOPNOTSUPP) {
-		use_coda_close = 1;
-		err = 0;
-	}
-
-out:
-	unlock_kernel();
-	return err;
-}
-
 int coda_release(struct inode *coda_inode, struct file *coda_file)
 {
 	unsigned short flags = (coda_file->f_flags) & (~O_EXCL);
@@ -215,19 +169,9 @@ int coda_release(struct inode *coda_inode, struct file *coda_file)
 	int err = 0;
 
 	lock_kernel();
- 
-	if (!use_coda_close) {
-		err = venus_release(coda_inode->i_sb, coda_i2f(coda_inode),
-				    coda_flags);
-		if (err == -EOPNOTSUPP) {
-			use_coda_close = 1;
-			err = 0;
-		}
-	}
 
-	if (use_coda_close)
-		err = venus_close(coda_inode->i_sb, coda_i2f(coda_inode),
-				  coda_flags, coda_file->f_uid);
+	err = venus_close(coda_inode->i_sb, coda_i2f(coda_inode),
+			  coda_flags, coda_file->f_uid);
 
 	/* did we redirect the mapping for this file? */
 	if (coda_file->f_mapping != &coda_inode->i_data) {
@@ -240,7 +184,10 @@ int coda_release(struct inode *coda_inode, struct file *coda_file)
 	coda_file->private_data = NULL;
 
 	unlock_kernel();
-	return err;
+
+	/* VFS fput ignores the return value from file_operations->release, so
+	 * there is no use returning an error here */
+	return 0;
 }
 
 int coda_fsync(struct file *coda_file, struct dentry *coda_dentry, int datasync)
@@ -280,7 +227,6 @@ struct file_operations coda_file_operations = {
 	.write		= coda_file_write,
 	.mmap		= coda_file_mmap,
 	.open		= coda_open,
-	.flush		= coda_flush,
 	.release	= coda_release,
 	.fsync		= coda_fsync,
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 22)

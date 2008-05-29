@@ -146,44 +146,6 @@ int venus_lookup(struct super_block *sb, struct CodaFid *fid,
 	return error;
 }
 
-int venus_store(struct super_block *sb, struct CodaFid *fid, int flags,
-		vuid_t uid)
-{
-	union inputArgs *inp;
-	union outputArgs *outp;
-	int insize, outsize, error;
-
-	insize = SIZE(store);
-	UPARG(CODA_STORE);
-
-	inp->ih.uid = uid;
-	inp->coda_store.VFid = *fid;
-	inp->coda_store.flags = flags;
-
-	error = coda_upcall(coda_sbp(sb), insize, &outsize, inp);
-
-	CODA_FREE(inp, insize);
-	return error;
-}
-
-int venus_release(struct super_block *sb, struct CodaFid *fid, int flags)
-{
-        union inputArgs *inp;
-        union outputArgs *outp;
-        int insize, outsize, error;
-	
-	insize = SIZE(release);
-	UPARG(CODA_RELEASE);
-	
-	inp->coda_release.VFid = *fid;
-	inp->coda_release.flags = flags;
-
-	error = coda_upcall(coda_sbp(sb), insize, &outsize, inp);
-
-	CODA_FREE(inp, insize);
-	return error;
-}
-
 int venus_close(struct super_block *sb, struct CodaFid *fid, int flags,
 		vuid_t uid)
 {
@@ -628,15 +590,11 @@ static void coda_unblock_signals(sigset_t *old)
 	spin_unlock_irq(&current->sighand->siglock);
 }
 
-/* Don't allow signals to interrupt the following upcalls before venus
- * has seen them,
- * - CODA_CLOSE or CODA_RELEASE upcall	(to avoid userspace refcount problems)
- * - CODA_STORE				(to avoid data loss)
+/* Don't allow signals to interrupt the CODA_CLOSE upcall before venus
+ * has seen them to avoid userspace refcount problems.
  */
 #define CODA_INTERRUPTIBLE(r) (!coda_hard && \
-			       (((r)->uc_opcode != CODA_CLOSE && \
-				 (r)->uc_opcode != CODA_STORE && \
-				 (r)->uc_opcode != CODA_RELEASE) || \
+			       ((r)->uc_opcode != CODA_CLOSE || \
 				(r)->uc_flags & REQ_READ))
 static inline void coda_waitfor_upcall(struct upc_req *req)
 {

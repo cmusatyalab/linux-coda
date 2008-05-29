@@ -77,7 +77,6 @@ struct file_operations coda_dir_operations = {
 	.read		= generic_read_dir,
 	.readdir	= coda_readdir,
 	.open		= coda_open,
-	.flush		= coda_flush,
 	.release	= coda_release,
 	.fsync		= coda_fsync,
 };
