@@ -76,5 +76,10 @@
 #define kmem_cache_create(a,b,c,d,e) kmem_cache_create(a,b,c,d,e,NULL)
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 24) /* 2.6.24-rc1 */
+/* git commit a47afb0f9d794d525a372c8d69902147cc88222a pid namespaces API */
+#define task_pgrp_nr(a)	process_group(a)
+#endif
+
 #endif /* _COMPAT_H_ */
 
