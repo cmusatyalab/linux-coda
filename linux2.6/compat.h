@@ -15,11 +15,15 @@
 #endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 13) /* 2.6.13 */
 #define class_create(a,b)		class_simple_create(a,b)
-#define class_device_create(a,b,c,d,e,f) class_simple_device_add(a,c,d,e,f)
-#define class_device_destroy(a,b)       class_simple_device_remove(b)
 #define class_destroy(a)		class_simple_destroy(a)
+#define device_create(a,b,c,d,e)	class_simple_device_add(a,c,NULL,d,e)
+#define device_destroy(a,b)		class_simple_device_remove(b)
 #elif LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 15) /* 2.6.15-rc1 */
-#define class_device_create(a,b,c,d,e,f) class_device_create(a,c,d,e,f)
+#define device_create(a,b,c,d,e)	class_device_create(a,c,NULL,d,e)
+#define device_destroy(a,b)		class_device_destroy(a,b)
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 25) /* 2.6.25-rc1 */
+#define device_create(a,b,c,d,e)	class_device_create(a,b,c,NULL,d,e)
+#define device_destroy(a,b)		class_device_destroy(a,b)
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16) /* 2.6.16-rc1 */
