@@ -18,7 +18,7 @@ KSRC ?= /lib/modules/${KVER}/build
 pwd  := $(shell pwd)
 
 coda_makeflags := CONFIG_CODA_FS=m \
-	CPPFLAGS="-D__KERNEL__ -I${pwd} -Iinclude -include linux/autoconf.h" \
+	LINUXINCLUDE="-I${pwd} -Iinclude -include linux/autoconf.h" \
 	INSTALL_MOD_DIR=kernel/fs/coda -C ${KSRC} M=${pwd}
 
 all: ${KSRC}
