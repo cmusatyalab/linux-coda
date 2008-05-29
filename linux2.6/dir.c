@@ -486,26 +486,25 @@ static int coda_venus_readdir(struct file *filp, filldir_t filldir,
 	unsigned int type;
 	struct qstr name;
 	ino_t ino;
-	int ret, i;
+	int ret;
 
 	vdir = kmalloc(sizeof(*vdir), GFP_KERNEL);
 	if (!vdir) return -ENOMEM;
 
-	i = filp->f_pos;
-	switch(i) {
-	case 0:
+	if (filp->f_pos == 0) {
 		ret = filldir(dirent, ".", 1, 0, dir->d_inode->i_ino, DT_DIR);
-		if (ret < 0) break;
+		if (ret < 0)
+			goto out;
 		result++;
 		filp->f_pos++;
-		/* fallthrough */
-	case 1:
+	}
+	if (filp->f_pos == 1) {
 		ret = filldir(dirent, "..", 2, 1, dir->d_parent->d_inode->i_ino, DT_DIR);
-		if (ret < 0) break;
+		if (ret < 0)
+			goto out;
 		result++;
 		filp->f_pos++;
-		/* fallthrough */
-	default:
+	}
 	while (1) {
 		/* read entries from the directory file */
 		ret = kernel_read(filp, filp->f_pos - 2, (char *)vdir,
@@ -550,7 +549,7 @@ static int coda_venus_readdir(struct file *filp, filldir_t filldir,
 
 			type = CDT2DT(vdir->d_type);
 			ret = filldir(dirent, name.name, name.len, filp->f_pos,
-				      ino, type); 
+				      ino, type);
 			/* failure means no space for filling in this round */
 			if (ret < 0) break;
 			result++;
@@ -559,7 +558,7 @@ static int coda_venus_readdir(struct file *filp, filldir_t filldir,
 		 * we've already established it is non-zero. */
 		filp->f_pos += vdir->d_reclen;
 	}
-	} 
+out:
 	kfree(vdir);
 	return result ? result : ret;
 }
