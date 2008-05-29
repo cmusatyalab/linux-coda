@@ -52,7 +52,12 @@ static void coda_destroy_inode(struct inode *inode)
 	kmem_cache_free(coda_inode_cachep, ITOC(inode));
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) /* 2.6.24-rc1 */
+/* git commit 4ba9b9d0ba0a49d91fa6417c7510ee36f48cf957 remove useless ctor */
+static void init_once(struct kmem_cache * cachep, void * foo)
+#else
 static void init_once(void * foo, struct kmem_cache * cachep, unsigned long flags)
+#endif
 {
 	struct coda_inode_info *ei = (struct coda_inode_info *) foo;
 
@@ -64,7 +69,7 @@ static void init_once(void * foo, struct kmem_cache * cachep, unsigned long flag
 #endif
 		inode_init_once(&ei->vfs_inode);
 }
- 
+
 int coda_init_inodecache(void)
 {
 	coda_inode_cachep = kmem_cache_create("coda_inode_cache",
