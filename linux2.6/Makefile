@@ -14,12 +14,13 @@ coda-objs := psdev.o cache.o cnode.o inode.o dir.o file.o upcall.o \
 #
 
 KVER ?= $(shell uname -r)
-KSRC ?= /lib/modules/${KVER}/build
+KSRC ?= /lib/modules/${KVER}/source
+KBLD ?= /lib/modules/${KVER}/build
 pwd  := $(shell pwd)
 
 coda_makeflags := CONFIG_CODA_FS=m \
-	LINUXINCLUDE="-I${pwd} -Iinclude -include linux/autoconf.h" \
-	INSTALL_MOD_DIR=kernel/fs/coda -C ${KSRC} M=${pwd}
+	LINUXINCLUDE="-I${pwd} -Iinclude -I${KSRC}/include -include linux/autoconf.h" \
+	INSTALL_MOD_DIR=kernel/fs/coda -C ${KBLD} M=${pwd}
 
 all: ${KSRC}
 	make ${coda_makeflags}
@@ -35,7 +36,7 @@ ${KSRC}:
 	@echo ===
 	@echo === Cannot find the source directory for your ${KVER} kernel.
 	@echo ===
-	@echo === I was expecting to find a link at ${KSRC}
+	@echo === I was expecting to find a link at ${KBLD}
 	@echo === pointing at the source tree. You might have to install a
 	@echo === kernel-headers and/or kernel-kbuild package from your
 	@echo === distribution that matches this kernel.

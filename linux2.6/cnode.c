@@ -2,6 +2,7 @@
    (C) 1996 Peter Braam
    */
 
+#include <linux/version.h>
 #include <linux/coda_linux.h>
 #include <linux/coda_psdev.h>
 
@@ -11,9 +12,15 @@ static inline int coda_fideq(struct CodaFid *fid1, struct CodaFid *fid2)
 }
 
 static struct inode_operations coda_symlink_inode_operations = {
+/* old-2.6-bkcvs 4f5b9fdc79286757771f42cf3f10a8ce574d3fd7 */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 6)
+	.readlink       = page_readlink,
+	.follow_link    = page_follow_link,
+#else
 	.readlink	= generic_readlink,
 	.follow_link	= page_follow_link_light,
 	.put_link	= page_put_link,
+#endif
 	.setattr	= coda_setattr,
 };
 
