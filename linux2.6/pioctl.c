@@ -49,7 +49,7 @@ static int coda_ioctl_permission(struct inode *inode, int mask,
 static int coda_ioctl_permission(struct inode *inode, int mask)
 #endif
 {
-        return 0;
+        return (mask & MAY_EXEC) ? -EACCES : 0;
 }
 
 static int coda_pioctl(struct inode * inode, struct file * filp, 

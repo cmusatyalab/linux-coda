@@ -27,6 +27,8 @@
 #elif LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27) /* 2.6.27-rc1 */
 /* git commit 6143b599700f7d6d7961e2de88f1486b2b19b1f2 convert device_create to device_create_drvdata */
 #define device_create(a,b,c,d,e,f)	device_create_drvdata(a,b,c,d,e,f)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28) /* 2.6.28-rc1 */
+/* git commit a9b12619f7b6f19c871437ec24a088787a04b1de convert device_create_drvdata to device_create */
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16) /* 2.6.16-rc1 */
@@ -109,6 +111,11 @@
 #define PATH struct nameidata
 #else
 #define PATH struct path
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 28)
+/* git commit f696a3659fc4b3a3bf4bc83d9dbec5e5a2ffd929 move executable checking into permission */
+#define execute_ok(inode) 1
 #endif
 
 #endif /* _COMPAT_H_ */

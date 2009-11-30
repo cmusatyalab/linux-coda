@@ -19,7 +19,7 @@ KBLD ?= /lib/modules/${KVER}/build
 pwd  := $(shell pwd)
 
 coda_makeflags := CONFIG_CODA_FS=m \
-	LINUXINCLUDE="-I${pwd} -Iinclude -I${KSRC}/include -include linux/autoconf.h" \
+	NOSTDINC_FLAGS="-nostdinc -isystem $(shell $(CC) -print-file-name=include) -I${pwd}" \
 	INSTALL_MOD_DIR=kernel/fs/coda -C ${KBLD} M=${pwd}
 
 all: ${KSRC}
