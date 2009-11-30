@@ -16,14 +16,17 @@
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 13) /* 2.6.13 */
 #define class_create(a,b)		class_simple_create(a,b)
 #define class_destroy(a)		class_simple_destroy(a)
-#define device_create(a,b,c,d,e)	class_simple_device_add(a,c,NULL,d,e)
+#define device_create(a,b,c,d,e,f)	class_simple_device_add(a,c,NULL,e,f)
 #define device_destroy(a,b)		class_simple_device_remove(b)
 #elif LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 15) /* 2.6.15-rc1 */
-#define device_create(a,b,c,d,e)	class_device_create(a,c,NULL,d,e)
+#define device_create(a,b,c,d,e,f)	class_device_create(a,c,NULL,e,f)
 #define device_destroy(a,b)		class_device_destroy(a,b)
 #elif LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 25) /* 2.6.25-rc1 */
-#define device_create(a,b,c,d,e)	class_device_create(a,b,c,NULL,d,e)
+#define device_create(a,b,c,d,e,f)	class_device_create(a,b,c,NULL,e,f)
 #define device_destroy(a,b)		class_device_destroy(a,b)
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27) /* 2.6.27-rc1 */
+/* git commit 6143b599700f7d6d7961e2de88f1486b2b19b1f2 convert device_create to device_create_drvdata */
+#define device_create(a,b,c,d,e,f)	device_create_drvdata(a,b,c,d,e,f)
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16) /* 2.6.16-rc1 */
@@ -82,12 +85,30 @@
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 25) /* 2.6.25-rc2 */
-#define nd_path_dentry(nd)	(nd).dentry
-#else
+#define nd_path_dentry(ndp)	(ndp).dentry
+#define path_dentry(ndp)	(ndp).dentry
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27) /* 2.6.27-rc1 */
 /* git commit 4ac9137858e08a19f29feac4e1f4df7c268b0ba5 embed path in nameidata*/
-#define nd_path_dentry(nd)	(nd).path.dentry
+#define nd_path_dentry(ndp)	(ndp).path.dentry
+#define path_dentry(ndp)	(ndp).path.dentry
 /* git commit 1d957f9bf87da74f420424d16ece005202bbebd3 introduce path_put */
+#define nd_path_release(ndp)	path_put(&(ndp)->path);
 #define path_release(ndp)	path_put(&(ndp)->path);
+#else
+/* git commit 2d8f30380ab8c706f4e0a8f1aaa22b5886e9ac8a sanitize __user_walk_fd() et.al. */
+#define nd_path_dentry(ndp)	(ndp).path.dentry
+#define path_dentry(path)	(path).dentry
+#define nd_path_release(ndp)	path_put(&(ndp)->path);
+#define path_release(path)	path_put(path);
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27) /* 2.6.27-rc1 */
+/* git commit 2d8f30380ab8c706f4e0a8f1aaa22b5886e9ac8a sanitize __user_walk_fd() et.al. */
+#define user_path(a,b)		user_path_walk(a,b)
+#define user_lpath(a,b)		user_path_walk_link(a,b)
+#define PATH struct nameidata
+#else
+#define PATH struct path
 #endif
 
 #endif /* _COMPAT_H_ */

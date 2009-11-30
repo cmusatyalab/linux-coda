@@ -128,9 +128,16 @@ exit:
 }
 
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27) /* 2.6.27-rc1 */
 int coda_permission(struct inode *inode, int mask, struct nameidata *nd)
+#else
+/* git commit e6305c43eda10ebfd2ad9e35d6e172ccc7bb3695 sanitize permission prototype */
+int coda_permission(struct inode *inode, int mask)
+#endif
 {
         int error = 0;
+
+	mask &= MAY_READ | MAY_WRITE | MAY_EXEC;
  
 	if (!mask)
 		return 0; 

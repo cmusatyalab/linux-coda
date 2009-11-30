@@ -12,6 +12,7 @@
 #ifndef _LINUX_CODA_FS
 #define _LINUX_CODA_FS
 
+#include <linux/version.h>
 #include <linux/kernel.h>
 #include <linux/param.h>
 #include <linux/mm.h>
@@ -37,7 +38,12 @@ extern struct file_operations coda_ioctl_operations;
 /* operations shared over more than one file */
 int coda_open(struct inode *i, struct file *f);
 int coda_release(struct inode *i, struct file *f);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27) /* 2.6.27-rc1 */
 int coda_permission(struct inode *inode, int mask, struct nameidata *nd);
+#else
+/* git commit e6305c43eda10ebfd2ad9e35d6e172ccc7bb3695 sanitize permission prototype */
+int coda_permission(struct inode *inode, int mask);
+#endif
 int coda_revalidate_inode(struct dentry *);
 int coda_getattr(struct vfsmount *, struct dentry *, struct kstat *);
 int coda_setattr(struct dentry *, struct iattr *);

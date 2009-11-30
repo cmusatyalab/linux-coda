@@ -346,7 +346,8 @@ static int init_coda_psdev(void)
 	}		
 	for (i = 0; i < MAX_CODADEVS; i++)
 		device_create(coda_psdev_class, NULL,
-			      MKDEV(CODA_PSDEV_MAJOR,i), "cfs%d", i);
+			      MKDEV(CODA_PSDEV_MAJOR,i),
+			      NULL, "cfs%d", i);
 
 	devfs_mk_dir ("coda");
 	for (i = 0; i < MAX_CODADEVS; i++) {

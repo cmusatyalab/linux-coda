@@ -52,11 +52,14 @@ static void coda_destroy_inode(struct inode *inode)
 	kmem_cache_free(coda_inode_cachep, ITOC(inode));
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) /* 2.6.24-rc1 */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 24) /* 2.6.24-rc1 */
+static void init_once(void * foo, struct kmem_cache * cachep, unsigned long flags)
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27) /* 2.6.27-rc1 */
 /* git commit 4ba9b9d0ba0a49d91fa6417c7510ee36f48cf957 remove useless ctor */
 static void init_once(struct kmem_cache * cachep, void * foo)
 #else
-static void init_once(void * foo, struct kmem_cache * cachep, unsigned long flags)
+/* git commit 51cc50685a4275c6a02653670af9f108a64e01cf drop kmem cache argument from constructor */
+static void init_once(void * foo)
 #endif
 {
 	struct coda_inode_info *ei = (struct coda_inode_info *) foo;
@@ -288,7 +291,7 @@ static int coda_get_sb(struct file_system_type *fs_type, int flags,
 	err = path_lookup(dev_name, LOOKUP_FOLLOW, &nd);
 	if (!err) {
 		vc = get_device(nd_path_dentry(nd)->d_inode);
-		path_release(&nd);
+		nd_path_release(&nd);
 	}
 	if (vc)
 		goto mount;

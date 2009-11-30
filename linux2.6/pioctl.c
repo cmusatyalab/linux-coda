@@ -18,8 +18,13 @@
 #include "compat.h"
 
 /* pioctl ops */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27) /* 2.6.27-rc1 */
 static int coda_ioctl_permission(struct inode *inode, int mask,
 				 struct nameidata *nd);
+#else
+/* git commit e6305c43eda10ebfd2ad9e35d6e172ccc7bb3695 sanitize permission prototype */
+static int coda_ioctl_permission(struct inode *inode, int mask);
+#endif
 static int coda_pioctl(struct inode * inode, struct file * filp, 
                        unsigned int cmd, unsigned long user_data);
 
@@ -36,8 +41,13 @@ struct file_operations coda_ioctl_operations = {
 };
 
 /* the coda pioctl inode ops */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27) /* 2.6.27-rc1 */
 static int coda_ioctl_permission(struct inode *inode, int mask,
 				 struct nameidata *nd)
+#else
+/* git commit e6305c43eda10ebfd2ad9e35d6e172ccc7bb3695 sanitize permission prototype */
+static int coda_ioctl_permission(struct inode *inode, int mask)
+#endif
 {
         return 0;
 }
@@ -45,7 +55,7 @@ static int coda_ioctl_permission(struct inode *inode, int mask,
 static int coda_pioctl(struct inode * inode, struct file * filp, 
                        unsigned int cmd, unsigned long user_data)
 {
-	struct nameidata nd;
+	PATH path;
         int error;
 	struct PioctlData data;
         struct inode *target_inode = NULL;
@@ -60,21 +70,21 @@ static int coda_pioctl(struct inode * inode, struct file * filp,
          * Look up the pathname. Note that the pathname is in 
          * user memory, and namei takes care of this
          */
-        if ( data.follow ) {
-                error = user_path_walk(data.path, &nd);
+        if (data.follow) {
+                error = user_path(data.path, &path);
 	} else {
-	        error = user_path_walk_link(data.path, &nd);
+	        error = user_lpath(data.path, &path);
 	}
 		
 	if ( error ) {
 		return error;
         } else {
-	        target_inode = nd_path_dentry(nd)->d_inode;
+	        target_inode = path_dentry(path)->d_inode;
 	}
 	
 	/* return if it is not a Coda inode */
 	if ( target_inode->i_sb != inode->i_sb ) {
-		path_release(&nd);
+		path_release(&path);
 	        return  -EINVAL;
 	}
 
@@ -83,7 +93,7 @@ static int coda_pioctl(struct inode * inode, struct file * filp,
 
 	error = venus_pioctl(inode->i_sb, &(cnp->c_fid), cmd, &data);
 
-	path_release(&nd);
+	path_release(&path);
         return error;
 }
 
