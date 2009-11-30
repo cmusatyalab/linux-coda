@@ -118,5 +118,14 @@
 #define execute_ok(inode) 1
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 29)
+/* git commit 97b7702cd1bdb8e89bde6c70aa983e7b82a52ec6 wrap task credential accesses */
+#define current_fsuid() (current->fsuid)
+#define FILE_FSUID(file) ((file)->f_uid)
+#else
+/* git commit d76b0d9b2d87cfc95686e148767cbf7d0e22bdc0 use creds in file structs */
+#define FILE_FSUID(file) ((file)->f_cred->fsuid)
+#endif
+
 #endif /* _COMPAT_H_ */
 

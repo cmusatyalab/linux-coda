@@ -19,7 +19,9 @@
 
 #include "compat.h"
 
+#ifdef CONFIG_SYSCTL
 static struct ctl_table_header *fs_table_header;
+#endif
 
 /* fd6065b4fdcb64c43e400278ebd0cb56989871c3  sysctl: C99 convert coda ctl_tables and remove binary sysctls */
 #ifdef CTL_UNNUMBERED
@@ -62,6 +64,7 @@ static ctl_table coda_table[] = {
 	{}
 };
 
+#ifdef CONFIG_SYSCTL
 static ctl_table fs_table[] = {
 	{
 		.ctl_name = FS_CODA,
@@ -71,7 +74,7 @@ static ctl_table fs_table[] = {
 	},
 	{}
 };
-
+#endif
 
 void coda_sysctl_init(void)
 {

@@ -9,6 +9,7 @@
 
 #include <linux/file.h>
 #include <linux/fs.h>
+#include <linux/cred.h>
 #include <linux/smp_lock.h>
 
 #include <linux/coda_linux.h>
@@ -171,7 +172,7 @@ int coda_release(struct inode *coda_inode, struct file *coda_file)
 	lock_kernel();
 
 	err = venus_close(coda_inode->i_sb, coda_i2f(coda_inode),
-			  coda_flags, coda_file->f_uid);
+			  coda_flags, FILE_FSUID(coda_file));
 
 	/* did we redirect the mapping for this file? */
 	if (coda_file->f_mapping != &coda_inode->i_data) {
