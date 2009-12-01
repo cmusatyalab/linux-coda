@@ -49,13 +49,16 @@ coda_file_splice_read(struct file *coda_file, loff_t *ppos,
 		      struct pipe_inode_info *pipe, size_t count,
 		      unsigned int flags)
 {
+	ssize_t (*splice_read)(struct file *, loff_t *,
+			       struct pipe_inode_info *, size_t, unsigned int);
 	struct file *host_file = CODA_FTOC(coda_file);
 	BUG_ON(!host_file);
 
-	if (!host_file->f_op || !host_file->f_op->splice_read)
-		return -EINVAL;
+	splice_read = host_file->f_op->splice_read;
+	if (!splice_read)
+		splice_read = default_file_splice_read;
 
-	return host_file->f_op->splice_read(host_file, ppos, pipe, count, flags);
+	return splice_read(host_file, ppos, pipe, count, flags);
 }
 #endif
 

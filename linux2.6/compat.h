@@ -127,5 +127,15 @@
 #define FILE_FSUID(file) ((file)->f_cred->fsuid)
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
+/* git commit 6818173bd658439b83896a2a7586f64ab51bf29c implement default_splice_read method */
+static inline ssize_t default_file_splice_read(struct file *file, loff_t *ppos,
+					       struct pipe_inode_info *pipe,
+					       size_t count, unsigned int flags)
+{
+	return -EINVAL;
+}
+#endif
+
 #endif /* _COMPAT_H_ */
 
