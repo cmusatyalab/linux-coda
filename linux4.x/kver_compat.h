@@ -159,6 +159,14 @@ static inline int _coda_rename(
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 7, 0)
+// commit 6192269444ebfbfb42e23c7a6a93c76ffe4b5e51
+// Author: Al Viro <viro@zeniv.linux.org.uk>
+// Date:   Wed Apr 20 23:08:32 2016 -0400
+//
+//     introduce a parallel variant of ->iterate()
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0)
 #error "missing compatibility glue"
 #endif
 

@@ -430,6 +430,19 @@ static int coda_readdir(struct file *coda_file, struct dir_context *ctx)
 	BUG_ON(!cfi || cfi->cfi_magic != CODA_MAGIC);
 	host_file = cfi->cfi_container;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 7, 0)
+	if (host_file->f_op->iterate) {
+		struct inode *host_inode = file_inode(host_file);
+		ret = -ENOENT;
+		if (!IS_DEADDIR(host_inode)) {
+                        inode_lock(host_inode);
+                        ret = host_file->f_op->iterate(host_file, ctx);
+                        file_accessed(host_file);
+                        inode_unlock(host_inode);
+		}
+		return ret;
+	}
+#else
 	if (host_file->f_op->iterate || host_file->f_op->iterate_shared) {
 		struct inode *host_inode = file_inode(host_file);
 		ret = -ENOENT;
@@ -448,6 +461,7 @@ static int coda_readdir(struct file *coda_file, struct dir_context *ctx)
 		}
 		return ret;
 	}
+#endif
 	/* Venus: we must read Venus dirents from a file */
 	return coda_venus_readdir(coda_file, ctx);
 }
