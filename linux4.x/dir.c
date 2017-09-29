@@ -27,6 +27,7 @@
 #include "coda_cache.h"
 
 #include "coda_int.h"
+#include "kver_compat.h"
 
 /* same as fs/bad_inode.c */
 static int coda_return_EIO(void)
