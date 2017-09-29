@@ -31,6 +31,7 @@
 #include "coda_cache.h"
 
 #include "coda_int.h"
+#include "kver_compat.h"
 
 /* VFS super_block ops */
 static void coda_evict_inode(struct inode *);
@@ -238,6 +239,7 @@ static void coda_put_super(struct super_block *sb)
 {
 	struct venus_comm *vcp = coda_vcp(sb);
 	mutex_lock(&vcp->vc_mutex);
+        bdi_destroy(&vc->bdi);
 	vcp->vc_sb = NULL;
 	sb->s_fs_info = NULL;
 	mutex_unlock(&vcp->vc_mutex);

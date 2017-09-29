@@ -32,6 +32,24 @@
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 12, 0)
+// commit a5695a79088653c73c92ae8d48658cbc49f31884
+// Author: Jan Kara <jack@suse.cz>
+// Date:   Wed Apr 12 12:24:38 2017 +0200
+//
+//     coda: Convert to separately allocated bdi
+static inline int _super_setup_bdi(
+    struct super_block *sb, struct venus_comm *vc)
+{
+    int error = bdi_setup_and_register(&vc->bdi, "coda");
+    sb->s_bdi = &vc->bdi;
+    return error;
+}
+#define super_setup_bdi(sb) _super_setup_bdi(sb, vc)
+#else
+#define bdi_destroy(a)
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
 #error "missing compatibility glue"
 #endif
 
