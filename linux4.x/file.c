@@ -27,6 +27,52 @@
 #include "coda_int.h"
 #include "kver_compat.h"
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 1, 0)
+static ssize_t
+coda_file_read(struct file *coda_file, char __user *buf, size_t count, loff_t *ppos)
+{
+        struct coda_file_info *cfi;
+        struct file *host_file;
+
+        cfi = CODA_FTOC(coda_file);
+        BUG_ON(!cfi || cfi->cfi_magic != CODA_MAGIC);
+        host_file = cfi->cfi_container;
+
+        if (!host_file->f_op->read)
+                return -EINVAL;
+
+        return host_file->f_op->read(host_file, buf, count, ppos);
+}
+static ssize_t
+coda_file_write(struct file *coda_file, const char __user *buf, size_t count, loff_t *ppos)
+{
+        struct inode *host_inode, *coda_inode = file_inode(coda_file);
+        struct coda_file_info *cfi;
+        struct file *host_file;
+        ssize_t ret;
+
+        cfi = CODA_FTOC(coda_file);
+        BUG_ON(!cfi || cfi->cfi_magic != CODA_MAGIC);
+        host_file = cfi->cfi_container;
+
+        if (!host_file->f_op->write)
+                return -EINVAL;
+
+        host_inode = file_inode(host_file);
+        file_start_write(host_file);
+        mutex_lock(&coda_inode->i_mutex);
+
+        ret = host_file->f_op->write(host_file, buf, count, ppos);
+
+        coda_inode->i_size = host_inode->i_size;
+        coda_inode->i_blocks = (coda_inode->i_size + 511) >> 9;
+        coda_inode->i_mtime = coda_inode->i_ctime = CURRENT_TIME_SEC;
+        mutex_unlock(&coda_inode->i_mutex);
+        file_end_write(host_file);
+
+        return ret;
+}
+#else
 static ssize_t
 coda_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
 {
@@ -60,6 +106,7 @@ coda_file_write_iter(struct kiocb *iocb, struct iov_iter *to)
 	file_end_write(host_file);
 	return ret;
 }
+#endif
 
 static int
 coda_file_mmap(struct file *coda_file, struct vm_area_struct *vma)
@@ -199,8 +246,13 @@ int coda_fsync(struct file *coda_file, loff_t start, loff_t end, int datasync)
 
 const struct file_operations coda_file_operations = {
 	.llseek		= generic_file_llseek,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 1, 0)
+	.read	        = coda_file_read,
+	.write      	= coda_file_write,
+#else
 	.read_iter	= coda_file_read_iter,
 	.write_iter	= coda_file_write_iter,
+#endif
 	.mmap		= coda_file_mmap,
 	.open		= coda_open,
 	.release	= coda_release,

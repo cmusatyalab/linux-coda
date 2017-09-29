@@ -224,6 +224,27 @@ static inline int _coda_rename(
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 1, 0)
+// commit 2b0143b5c986be1ce8408b3aadc4709e0a94429d
+// Author: David Howells <dhowells@redhat.com>
+// Date:   Tue Mar 17 22:25:59 2015 +0000
+//
+//     VFS: normal filesystems (and lustre): d_inode() annotations
+#define d_inode(de)  (de->d_inode)
+#define d_really_is_positive(de) ((de) != NULL)
+#define d_really_is_negative(de) ((de) == NULL)
+// commit 5d5d568975307877e9195f5305f4240e506a2807
+// Author: Al Viro <viro@zeniv.linux.org.uk>
+// Date:   Fri Apr 3 15:41:18 2015 -0400
+//
+//     make new_sync_{read,write}() static
+// commit c12c49e70218ed1bde28fc8182ac274889d15b9d
+// Author: Al Viro <viro@zeniv.linux.org.uk>
+// Date:   Fri Apr 3 10:58:11 2015 -0400
+//
+//     coda: switch to ->read_iter/->write_iter
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 0, 0)
 #error "missing compatibility glue"
 #endif
 
