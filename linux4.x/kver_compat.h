@@ -17,6 +17,21 @@
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 13, 0)
+// commit abbb65899aecfc97bda64b6816d1e501754cfe1f
+// Author: Christoph Hellwig <hch@lst.de>
+// Date:   Sat May 27 11:16:52 2017 +0300
+//
+//     fs: implement vfs_iter_write using do_iter_write
+#define vfs_iter_write(a,b,c,d) vfs_iter_write(a,b,c)
+// commit 18e9710ee59ce3bd2a2512ddcd3f7ceebe8b8d17
+// Author: Christoph Hellwig <hch@lst.de>
+// Date:   Sat May 27 11:16:51 2017 +0300
+//
+//     fs: implement vfs_iter_read using do_iter_read
+#define vfs_iter_read(a,b,c,d) vfs_iter_read(a,b,c)
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 12, 0)
 #error "missing compatibility glue"
 #endif
 

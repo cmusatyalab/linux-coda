@@ -25,6 +25,7 @@
 
 #include "coda_linux.h"
 #include "coda_int.h"
+#include "kver_compat.h"
 
 static ssize_t
 coda_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
