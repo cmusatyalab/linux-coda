@@ -87,6 +87,17 @@ static inline int _coda_getattr(
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0)
+// commit dfeef68862edd7d4bafe68ef7aeb5f658ef24bb5
+// Author: Miklos Szeredi <mszeredi@redhat.com>
+// Date:   Fri Dec 9 16:45:04 2016 +0100
+//
+//     vfs: remove ".readlink = generic_readlink" assignments
+#define _coda_readlink generic_readlink
+#else
+#define _coda_readlink NULL
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
 #error "missing compatibility glue"
 #endif
 

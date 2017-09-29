@@ -11,12 +11,15 @@
 #include <linux/pagemap.h>
 #include "coda_linux.h"
 
+#include "kver_compat.h"
+
 static inline int coda_fideq(struct CodaFid *fid1, struct CodaFid *fid2)
 {
 	return memcmp(fid1, fid2, sizeof(*fid1)) == 0;
 }
 
 static const struct inode_operations coda_symlink_inode_operations = {
+        .readlink       = _coda_readlink,
 	.get_link	= page_get_link,
 	.setattr	= coda_setattr,
 };
