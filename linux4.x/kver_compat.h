@@ -167,6 +167,63 @@ static inline int _coda_rename(
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0)
+// commit 1d5cfdb076288df5eb95545a547a39905e95c930
+// Author: Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>
+// Date:   Fri Jan 22 15:11:02 2016 -0800
+//
+//     tree wide: use kvfree() than conditional kfree()/vfree()
+// commit 5955102c9984fa081b2d570cfac75c97eecf8f3b
+// Author: Al Viro <viro@zeniv.linux.org.uk>
+// Date:   Fri Jan 22 15:40:57 2016 -0500
+//
+//     wrappers for ->i_mutex access
+#define inode_lock(i)   mutex_lock(&i->i_mutex)
+#define inode_unlock(i) mutex_unlock(&i->i_mutex)
+// commit 5d097056c9a017a3b720849efb5432f37acabbac
+// Author: Vladimir Davydov <vdavydov@virtuozzo.com>
+// Date:   Thu Jan 14 15:18:21 2016 -0800
+//
+//     kmemcg: account certain kmem allocations to memcg
+// commit fceef393a538134f03b778c5d2519e670269342f
+// Author: Al Viro <viro@zeniv.linux.org.uk>
+// Date:   Tue Dec 29 15:58:39 2015 -0500
+//
+//     switch ->get_link() to delayed_call, kill ->put_link()
+// commit 6b2553918d8b4e6de9853fd6315bec7271a2e592
+// Author: Al Viro <viro@zeniv.linux.org.uk>
+// Date:   Tue Nov 17 10:20:54 2015 -0500
+//
+//     replace ->follow_link() with new method that could stay in RCU mode
+// commit 21fc61c73c3903c4c312d0802da01ec2b323d174
+// Author: Al Viro <viro@zeniv.linux.org.uk>
+// Date:   Tue Nov 17 01:07:57 2015 -0500
+//
+//     don't put symlink bodies in pagecache into highmem
+#define inode_nohighmem(i)
+#define _coda_symlink_kmap(p)   kmap(p)
+#define _coda_symlink_kunmap(p) kunmap(p)
+#else
+#define _coda_symlink_kmap(p)   page_address(p)
+#define _coda_symlink_kunmap(p)
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 4, 0)
+// commit 3725e9dd5bef376ab87d41e40c437a6b2a20eb59
+// Author: Jan Harkes <jaharkes@cs.cmu.edu>
+// Date:   Wed Sep 9 15:38:01 2015 -0700
+//
+//     fs/coda: fix readlink buffer overflow
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)
+// commit db6172c41194576ba2a27e64fa2a5576d11d6eb9
+// Author: Rasmus Villemoes <linux@rasmusvillemoes.dk>
+// Date:   Thu Mar 19 12:28:04 2015 +0100
+//
+//     fs: cleanup slight list_entry abuse
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 1, 0)
 #error "missing compatibility glue"
 #endif
 

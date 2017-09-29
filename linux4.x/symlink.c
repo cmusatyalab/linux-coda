@@ -19,6 +19,7 @@
 #include <linux/coda_psdev.h>
 
 #include "coda_linux.h"
+#include "kver_compat.h"
 
 static int coda_symlink_filler(struct file *file, struct page *page)
 {
@@ -26,7 +27,7 @@ static int coda_symlink_filler(struct file *file, struct page *page)
 	int error;
 	struct coda_inode_info *cii;
 	unsigned int len = PAGE_SIZE;
-	char *p = page_address(page);
+	char *p = _coda_symlink_kmap(page);
 
 	cii = ITOC(inode);
 
@@ -34,11 +35,13 @@ static int coda_symlink_filler(struct file *file, struct page *page)
 	if (error)
 		goto fail;
 	SetPageUptodate(page);
+        _coda_symlink_kunmap(page);
 	unlock_page(page);
 	return 0;
 
 fail:
 	SetPageError(page);
+        _coda_symlink_kunmap(page);
 	unlock_page(page);
 	return error;
 }

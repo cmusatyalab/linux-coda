@@ -20,7 +20,12 @@ static inline int coda_fideq(struct CodaFid *fid1, struct CodaFid *fid2)
 
 static const struct inode_operations coda_symlink_inode_operations = {
         .readlink       = _coda_readlink,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0)
+	.follow_link	= page_follow_link_light,
+	.put_link	= page_put_link,
+#else
 	.get_link	= page_get_link,
+#endif
 	.setattr	= coda_setattr,
 };
 
