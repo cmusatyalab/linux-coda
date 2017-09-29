@@ -50,6 +50,43 @@ static inline int _super_setup_bdi(
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
+// commit a528d35e8bfcc521d7cb70aaf03e1bd296c8493f
+// Author: David Howells <dhowells@redhat.com>
+// Date:   Tue Jan 31 16:46:22 2017 +0000
+//
+//     statx: Add a system call to make enhanced file info available
+static inline int _coda_getattr(
+    struct vfsmount *m, struct dentry *d, struct kstat *s)
+{
+    struct path p = {
+        .mnt = m,
+        .dentry = d
+    };
+    return coda_getattr(&p, s, 0, 0);
+}
+// commit 174cd4b1e5fbd0d74c68cf3a74f5bd4923485512
+// Author: Ingo Molnar <mingo@kernel.org>
+// Date:   Thu Feb 2 19:15:33 2017 +0100
+//
+//     sched/headers: Prepare to move signal wakeup & sigpending methods from <linux/sched.h> into <linux/sched/signal.h>
+// commit 3f07c0144132e4f59d88055ac8ff3e691a5fa2b8
+// Author: Ingo Molnar <mingo@kernel.org>
+// Date:   Wed Feb 8 18:51:30 2017 +0100
+//
+//     sched/headers: Prepare for new header dependencies before moving code to <linux/sched/signal.h>
+#include <linux/sched.h>
+// commit f74ac01520c9f6d89bbc3c6931a72f757b742f86
+// Author: Miklos Szeredi <mszeredi@redhat.com>
+// Date:   Mon Feb 20 16:51:23 2017 +0100
+//
+//     mm: use helper for calling f_op->mmap()
+#define call_mmap(file,vma) file->f_op->mmap(file,vma)
+#else
+#define _coda_getattr coda_getattr
+#include <linux/sched/signal.h>
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0)
 #error "missing compatibility glue"
 #endif
 

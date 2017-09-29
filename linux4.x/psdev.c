@@ -22,7 +22,6 @@
 #include <linux/kernel.h>
 #include <linux/major.h>
 #include <linux/time.h>
-#include <linux/sched/signal.h>
 #include <linux/slab.h>
 #include <linux/ioport.h>
 #include <linux/fcntl.h>
@@ -48,6 +47,7 @@
 #include "coda_linux.h"
 
 #include "coda_int.h"
+#include "kver_compat.h"
 
 /* statistics */
 int           coda_hard;         /* allows signals during upcalls */

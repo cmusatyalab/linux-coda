@@ -577,7 +577,7 @@ const struct inode_operations coda_dir_inode_operations = {
 	.mknod		= CODA_EIO_ERROR,
 	.rename		= coda_rename,
 	.permission	= coda_permission,
-	.getattr	= coda_getattr,
+	.getattr	= _coda_getattr,
 	.setattr	= coda_setattr,
 };
 

@@ -15,7 +15,6 @@
  */
 
 #include <linux/signal.h>
-#include <linux/sched/signal.h>
 #include <linux/types.h>
 #include <linux/kernel.h>
 #include <linux/mm.h>
@@ -37,6 +36,7 @@
 #include "coda_cache.h"
 
 #include "coda_int.h"
+#include "kver_compat.h"
 
 static int coda_upcall(struct venus_comm *vc, int inSize, int *outSize,
 		       union inputArgs *buffer);

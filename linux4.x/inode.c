@@ -287,7 +287,7 @@ int coda_setattr(struct dentry *de, struct iattr *iattr)
 
 const struct inode_operations coda_file_inode_operations = {
 	.permission	= coda_permission,
-	.getattr	= coda_getattr,
+	.getattr	= _coda_getattr,
 	.setattr	= coda_setattr,
 };
 
