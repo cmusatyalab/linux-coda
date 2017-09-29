@@ -1,11 +1,6 @@
-This is the Coda kernel module as of in Linux-4.14-rc2
-with the following patches,
+This is the Coda kernel module as of in Linux-4.14-rc2 with the following patches,
 
-  - Allow for DKMS builds
-
-    Add dkms.conf and kver_compat.h to enable building against different kernel
-    versions.
-
+  - allow for DKMS builds against older kernels
   - coda: fix 'kernel memory exposure attempt' in fsync
     
     When an application called fsync on a file in Coda a small request with
@@ -24,9 +19,9 @@ with the following patches,
 To build this, install dkms on your system and then run.
 
     dkms add `pwd`
-    dkms build coda/6.7
-    dkms install coda/6.7
+    dkms build coda/6.10
+    dkms install coda/6.10
 
 and to remove
-    dkms remove coda/6.7 --all
+    dkms remove coda/6.10 --all
 
