@@ -98,6 +98,67 @@ static inline int _coda_getattr(
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
+// commit 82c156f853840645604acd7c2cebcb75ed1b6652
+// Author: Al Viro <viro@zeniv.linux.org.uk>
+// Date:   Thu Sep 22 23:35:42 2016 -0400
+//
+//     switch generic_file_splice_read() to use of ->read_iter()
+static inline ssize_t _coda_file_splice_read(
+        struct file *coda_file, loff_t *ppos,
+        struct pipe_inode_info *pipe, size_t count,
+        unsigned int flags)
+{
+       ssize_t (*splice_read)(struct file *, loff_t *,
+                              struct pipe_inode_info *, size_t, unsigned int);
+       struct coda_file_info *cfi;
+       struct file *host_file;
+
+       cfi = CODA_FTOC(coda_file);
+       BUG_ON(!cfi || cfi->cfi_magic != CODA_MAGIC);
+       host_file = cfi->cfi_container;
+
+       splice_read = host_file->f_op->splice_read;
+       if (!splice_read)
+               splice_read = default_file_splice_read;
+
+       return splice_read(host_file, ppos, pipe, count, flags);
+}
+// commit 02027d42c3f747945f19111d3da2092ed2148ac8
+// Author: Deepa Dinamani <deepa.kernel@gmail.com>
+// Date:   Wed Sep 14 07:48:05 2016 -0700
+//
+//     fs: Replace CURRENT_TIME_SEC with current_time() for inode timestamps
+#define current_time(i) CURRENT_TIME_SEC
+// commit 2773bf00aeb9bf39e022463272a61dd0ec9f55f4
+// Author: Miklos Szeredi <mszeredi@redhat.com>
+// Date:   Tue Sep 27 11:03:58 2016 +0200
+//
+//     fs: rename "rename2" i_op to "rename"
+// commit 1cd66c93ba8cdb873258f58ae6a817b28a02bcc3
+// Author: Miklos Szeredi <mszeredi@redhat.com>
+// Date:   Tue Sep 27 11:03:58 2016 +0200
+//
+//     fs: make remaining filesystems use .rename2
+static inline int _coda_rename(
+        struct inode *oi, struct dentry *od,
+        struct inode *ni, struct dentry *nd)
+{
+    return coda_rename(oi, od, ni, nd, 0);
+}
+#else
+#define _coda_file_splice_read generic_file_splice_read
+#define _coda_rename coda_rename
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
+// commit 84c60b1388249a0167d5fe8160f84e66a1221ba8
+// Author: Al Viro <viro@zeniv.linux.org.uk>
+// Date:   Fri May 27 22:40:31 2016 -0400
+//
+//     drop redundant ->owner initializations
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 7, 0)
 #error "missing compatibility glue"
 #endif
 
