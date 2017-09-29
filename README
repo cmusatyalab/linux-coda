@@ -4,6 +4,13 @@ Coda Filesystem: kernel module
 To build a coda.o / coda.ko module for your Linux kernel:
 ---------------------------------------------------------
 
+For 4.x kernels:
+- sudo dkms add linux4.x
+- sudo dkms build coda/6.7
+
+For 3.x kernels:
+    won't work until the necessary compatibility glue is added to kver_compat.h.
+
 For 2.4/2.6 kernels:
 - make
 - sudo make install
