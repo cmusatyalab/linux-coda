@@ -1,0 +1,32 @@
+This is the Coda kernel module as of in Linux-4.14-rc2
+with the following patches,
+
+  - Allow for DKMS builds
+
+    Add dkms.conf and kver_compat.h to enable building against different kernel
+    versions.
+
+  - coda: fix 'kernel memory exposure attempt' in fsync
+    
+    When an application called fsync on a file in Coda a small request with
+    just the file identifier was allocated, but the declared length was set
+    to the size of union of all possible upcall requests.
+    
+    This bug has been around for a very long time and is now caught by the
+    extra checking in usercopy that was introduced in Linux-4.8.
+    
+    The exposure happens when the Coda cache manager process reads the fsync
+    upcall request at which point it is killed. As a result there is nobody
+    servicing any further upcalls, trapping any processes that try to access
+    the mounted Coda filesystem.
+
+
+To build this, install dkms on your system and then run.
+
+    dkms add `pwd`
+    dkms build coda/6.7
+    dkms install coda/6.7
+
+and to remove
+    dkms remove coda/6.7 --all
+
