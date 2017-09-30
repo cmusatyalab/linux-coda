@@ -139,6 +139,9 @@ static inline ssize_t _coda_file_splice_read(
 // Date:   Tue Sep 27 11:03:58 2016 +0200
 //
 //     fs: make remaining filesystems use .rename2
+static int coda_rename(struct inode *old_dir, struct dentry *old_dentry,
+		       struct inode *new_dir, struct dentry *new_dentry,
+		       unsigned int flags);
 static inline int _coda_rename(
         struct inode *oi, struct dentry *od,
         struct inode *ni, struct dentry *nd)
@@ -184,6 +187,7 @@ static inline int _coda_rename(
 // Date:   Thu Jan 14 15:18:21 2016 -0800
 //
 //     kmemcg: account certain kmem allocations to memcg
+#define SLAB_ACCOUNT 0
 // commit fceef393a538134f03b778c5d2519e670269342f
 // Author: Al Viro <viro@zeniv.linux.org.uk>
 // Date:   Tue Dec 29 15:58:39 2015 -0500
