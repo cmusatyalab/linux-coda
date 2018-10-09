@@ -6,8 +6,13 @@
 #include <linux/string.h>
 #include <linux/time.h>
 
+#ifdef CODA_FS_OUT_OF_TREE
+#include "coda.h"
+#include "coda_psdev.h"
+#else
 #include <linux/coda.h>
 #include <linux/coda_psdev.h>
+#endif
 #include <linux/pagemap.h>
 #include "coda_linux.h"
 

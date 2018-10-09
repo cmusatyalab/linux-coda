@@ -11,7 +11,12 @@
 #include <linux/types.h>
 #include <linux/list.h>
 #include <linux/spinlock.h>
+
+#ifdef CODA_FS_OUT_OF_TREE
+#include "coda.h"
+#else
 #include <linux/coda.h>
+#endif
 
 /*
  * coda fs inode data
