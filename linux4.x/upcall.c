@@ -11,7 +11,7 @@
  * Copyright (C) 1997 Carnegie Mellon University
  *
  * Carnegie Mellon University encourages users of this code to contribute
- * improvements to the Coda project. Contact Peter Braam <coda@cs.cmu.edu>.
+ * improvements to the Coda project. Contact Jan Harkes <coda@cs.cmu.edu>.
  */
 
 #include <linux/signal.h>

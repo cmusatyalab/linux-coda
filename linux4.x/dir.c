@@ -5,7 +5,7 @@
  * Rewritten for Linux 2.1. (C) 1997 Carnegie Mellon University
  * 
  * Carnegie Mellon encourages users to contribute improvements to
- * the Coda project. Contact Peter Braam (coda@cs.cmu.edu).
+ * the Coda project. Contact Jan Harkes (coda@cs.cmu.edu).
  */
 
 #include <linux/types.h>

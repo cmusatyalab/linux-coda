@@ -3,7 +3,7 @@
  * Copyright (C) 1989 - 1997 Carnegie Mellon University
  *
  * Carnegie Mellon University encourages users of this software to
- * contribute improvements to the Coda project. Contact Peter Braam
+ * contribute improvements to the Coda project. Contact Jan Harkes
  * <coda@cs.cmu.edu>
  */
 
