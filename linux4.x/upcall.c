@@ -573,6 +573,28 @@ int venus_statfs(struct dentry *dentry, struct kstatfs *sfs)
         return error;
 }
 
+int venus_access_intent(struct super_block *sb, struct CodaFid *fid, size_t count, 
+	loff_t ppos, int mode)
+{
+        union inputArgs *inp;
+        union outputArgs *outp; 
+        int insize, outsize, error;
+
+        pr_debug("%s: pos = %d, count = %i, mode = %d\n", __func__,  ppos, count, mode);
+
+        insize=SIZE(access_intent);
+        UPARG(CODA_ACCESS_INTENT);
+
+        inp->coda_access_intent.VFid = *fid;
+        inp->coda_access_intent.count = count;
+        inp->coda_access_intent.pos = ppos;
+        inp->coda_access_intent.mode = mode;
+        error = coda_upcall(coda_vcp(sb), insize, &outsize, inp);
+
+        CODA_FREE(inp, insize);
+        return error;
+}
+
 /*
  * coda_upcall and coda_downcall routines.
  */
@@ -883,4 +905,3 @@ unlock_out:
 	iput(inode);
 	return 0;
 }
-

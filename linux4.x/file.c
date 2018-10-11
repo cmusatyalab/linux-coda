@@ -19,6 +19,7 @@
 #include <linux/string.h>
 #include <linux/slab.h>
 #include <linux/uaccess.h>
+#include <linux/uio.h>
 
 #ifdef CODA_FS_OUT_OF_TREE
 #include "coda.h"
@@ -37,6 +38,7 @@ static ssize_t
 coda_file_read(struct file *coda_file, char __user *buf, size_t count, loff_t *ppos)
 {
         struct coda_file_info *cfi;
+        struct inode *coda_inode = file_inode(coda_file);
         struct file *host_file;
 
         cfi = CODA_FTOC(coda_file);
@@ -45,8 +47,15 @@ coda_file_read(struct file *coda_file, char __user *buf, size_t count, loff_t *p
 
         if (!host_file->f_op->read)
                 return -EINVAL;
+                
+        err = venus_access_intent(coda_inode->i_sb, coda_i2f(coda_inode), count, *ppos, CODA_ACCESS_TYPE_READ);
+        if (err) goto finish_read;
+        
+        err = host_file->f_op->read(host_file, buf, count, ppos);
 
-        return host_file->f_op->read(host_file, buf, count, ppos);
+finish_read:
+        venus_access_intent(coda_inode->i_sb, coda_i2f(coda_inode), count, *ppos, CODA_ACCESS_TYPE_READ_FINISH);
+        return err;
 }
 static ssize_t
 coda_file_write(struct file *coda_file, const char __user *buf, size_t count, loff_t *ppos)
@@ -65,51 +74,87 @@ coda_file_write(struct file *coda_file, const char __user *buf, size_t count, lo
 
         host_inode = file_inode(host_file);
         file_start_write(host_file);
+        
+        err = venus_access_intent(coda_inode->i_sb, coda_i2f(coda_inode), count, *ppos, CODA_ACCESS_TYPE_WRITE);
+        if (err) goto finish_write;
+        
         mutex_lock(&coda_inode->i_mutex);
 
         ret = host_file->f_op->write(host_file, buf, count, ppos);
-
         coda_inode->i_size = host_inode->i_size;
         coda_inode->i_blocks = (coda_inode->i_size + 511) >> 9;
         coda_inode->i_mtime = coda_inode->i_ctime = CURRENT_TIME_SEC;
         mutex_unlock(&coda_inode->i_mutex);
         file_end_write(host_file);
 
+finish_write:
+        venus_access_intent(coda_inode->i_sb, coda_i2f(coda_inode), count, *ppos, CODA_ACCESS_TYPE_WRITE_FINISH);
         return ret;
 }
 #else
 static ssize_t
 coda_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
 {
-	struct file *coda_file = iocb->ki_filp;
-	struct coda_file_info *cfi = CODA_FTOC(coda_file);
+        struct file *coda_file = iocb->ki_filp;
+        pr_info("%s\n", __func__);
+        struct inode *coda_inode = file_inode(coda_file);
+        struct coda_file_info *cfi = CODA_FTOC(coda_file);
+        int err = 0;
+        int ki_pos_tmp = 0;
+        int to_tmp = 0;
 
-	BUG_ON(!cfi || cfi->cfi_magic != CODA_MAGIC);
+        pr_info("%s\n", __func__);
 
-	return vfs_iter_read(cfi->cfi_container, to, &iocb->ki_pos, 0);
+        BUG_ON(!cfi || cfi->cfi_magic != CODA_MAGIC);
+
+        ki_pos_tmp = iocb->ki_pos;
+        to_tmp = iov_iter_count(to);
+
+        err = venus_access_intent(coda_inode->i_sb, coda_i2f(coda_inode), iov_iter_count(to), iocb->ki_pos, CODA_ACCESS_TYPE_READ);
+        if (err) goto finish_read;
+
+        err = vfs_iter_read(cfi->cfi_container, to, &iocb->ki_pos, RWF_SYNC);
+
+finish_read:
+        venus_access_intent(coda_inode->i_sb, coda_i2f(coda_inode), to_tmp, ki_pos_tmp, CODA_ACCESS_TYPE_READ_FINISH);
+        return err;
 }
 
 static ssize_t
 coda_file_write_iter(struct kiocb *iocb, struct iov_iter *to)
 {
-	struct file *coda_file = iocb->ki_filp;
-	struct inode *coda_inode = file_inode(coda_file);
-	struct coda_file_info *cfi = CODA_FTOC(coda_file);
-	struct file *host_file;
-	ssize_t ret;
+        struct file *coda_file = iocb->ki_filp;
+        struct inode *coda_inode = file_inode(coda_file);
+        struct coda_file_info *cfi = CODA_FTOC(coda_file);
+        struct file *host_file;
+        ssize_t ret;
+        int err = 0;
+        int ki_pos_tmp = 0;
+        int to_tmp = 0;
 
-	BUG_ON(!cfi || cfi->cfi_magic != CODA_MAGIC);
+        BUG_ON(!cfi || cfi->cfi_magic != CODA_MAGIC);
 
-	host_file = cfi->cfi_container;
-	file_start_write(host_file);
-	inode_lock(coda_inode);
-	ret = vfs_iter_write(cfi->cfi_container, to, &iocb->ki_pos, 0);
-	coda_inode->i_size = file_inode(host_file)->i_size;
-	coda_inode->i_blocks = (coda_inode->i_size + 511) >> 9;
-	coda_inode->i_mtime = coda_inode->i_ctime = current_time(coda_inode);
-	inode_unlock(coda_inode);
-	file_end_write(host_file);
-	return ret;
+        host_file = cfi->cfi_container;
+        
+        ki_pos_tmp = iocb->ki_pos;
+        to_tmp = iov_iter_count(to);
+        
+        err = venus_access_intent(coda_inode->i_sb, coda_i2f(coda_inode), iov_iter_count(to), iocb->ki_pos, CODA_ACCESS_TYPE_WRITE);
+        if (err) goto finish_write;
+
+        file_start_write(host_file);
+        inode_lock(coda_inode);
+
+        ret = vfs_iter_write(cfi->cfi_container, to, &iocb->ki_pos, RWF_SYNC);
+        coda_inode->i_size = file_inode(host_file)->i_size;
+        coda_inode->i_blocks = (coda_inode->i_size + 511) >> 9;
+        coda_inode->i_mtime = coda_inode->i_ctime = current_time(coda_inode);
+        inode_unlock(coda_inode);
+        file_end_write(host_file);
+        
+finish_write:
+        venus_access_intent(coda_inode->i_sb, coda_i2f(coda_inode), to_tmp, ki_pos_tmp, CODA_ACCESS_TYPE_WRITE_FINISH);
+        return ret;
 }
 #endif
 
