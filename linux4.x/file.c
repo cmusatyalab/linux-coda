@@ -165,6 +165,7 @@ coda_file_mmap(struct file *coda_file, struct vm_area_struct *vma)
 	struct coda_inode_info *cii;
 	struct file *host_file;
 	struct inode *coda_inode, *host_inode;
+        int err = 0;
 
 	cfi = CODA_FTOC(coda_file);
 	BUG_ON(!cfi || cfi->cfi_magic != CODA_MAGIC);
@@ -179,12 +180,12 @@ coda_file_mmap(struct file *coda_file, struct vm_area_struct *vma)
 	cii = ITOC(coda_inode);
 	spin_lock(&cii->c_lock);
 	coda_file->f_mapping = host_file->f_mapping;
-	if (coda_inode->i_mapping == &coda_inode->i_data)
+	if (coda_inode->i_mapping == &coda_inode->i_data) {
 		coda_inode->i_mapping = host_inode->i_mapping;
 
 	/* only allow additional mmaps as long as userspace isn't changing
 	 * the container file on us! */
-	else if (coda_inode->i_mapping != host_inode->i_mapping) {
+        } else if (coda_inode->i_mapping != host_inode->i_mapping) {
 		spin_unlock(&cii->c_lock);
 		return -EBUSY;
 	}
@@ -194,7 +195,15 @@ coda_file_mmap(struct file *coda_file, struct vm_area_struct *vma)
 	cfi->cfi_mapcount++;
 	spin_unlock(&cii->c_lock);
 
-	return call_mmap(host_file, vma);
+        err = venus_access_intent(coda_inode->i_sb, coda_i2f(coda_inode), 
+                                  vma->vm_end - vma->vm_start, 
+                                  vma->vm_pgoff * PAGE_SIZE, 
+                                  CODA_ACCESS_TYPE_MMAP);
+        if (err) goto error_mmap;
+
+        err = call_mmap(host_file, vma);
+error_mmap:
+	return err;
 }
 
 int coda_open(struct inode *coda_inode, struct file *coda_file)
