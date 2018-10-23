@@ -96,14 +96,11 @@ static ssize_t
 coda_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
 {
         struct file *coda_file = iocb->ki_filp;
-        pr_info("%s\n", __func__);
         struct inode *coda_inode = file_inode(coda_file);
         struct coda_file_info *cfi = CODA_FTOC(coda_file);
         int err = 0;
         int ki_pos_tmp = 0;
         int to_tmp = 0;
-
-        pr_info("%s\n", __func__);
 
         BUG_ON(!cfi || cfi->cfi_magic != CODA_MAGIC);
 
