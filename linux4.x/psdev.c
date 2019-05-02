@@ -41,8 +41,13 @@
 #include <asm/poll.h>
 #include <linux/uaccess.h>
 
+#ifdef CODA_FS_OUT_OF_TREE
+#include "coda.h"
+#include "coda_psdev.h"
+#else
 #include <linux/coda.h>
 #include <linux/coda_psdev.h>
+#endif
 
 #include "coda_linux.h"
 

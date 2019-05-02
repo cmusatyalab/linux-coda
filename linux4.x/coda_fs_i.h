@@ -11,7 +11,12 @@
 #include <linux/types.h>
 #include <linux/list.h>
 #include <linux/spinlock.h>
+
+#ifdef CODA_FS_OUT_OF_TREE
+#include "coda.h"
+#else
 #include <linux/coda.h>
+#endif
 
 /*
  * coda fs inode data
@@ -39,6 +44,7 @@ struct coda_file_info {
 	int		   cfi_magic;	  /* magic number */
 	struct file	  *cfi_container; /* container file for this cnode */
 	unsigned int	   cfi_mapcount;  /* nr of times this file is mapped */
+	bool cfi_access_intent; /* per-file access intent support */
 };
 
 #define CODA_FTOC(file) ((struct coda_file_info *)((file)->private_data))

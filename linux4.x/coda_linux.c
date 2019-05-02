@@ -4,7 +4,7 @@
  * Rewritten for Linux 2.1. (C) 1997 Carnegie Mellon University
  * 
  * Carnegie Mellon encourages users to contribute improvements to
- * the Coda project. Contact Peter Braam (coda@cs.cmu.edu).
+ * the Coda project. Contact Jan Harkes (coda@cs.cmu.edu).
  */
 
 #include <linux/types.h>
@@ -16,8 +16,13 @@
 #include <linux/uaccess.h>
 #include <linux/string.h>
 
+#ifdef CODA_FS_OUT_OF_TREE
+#include "coda.h"
+#include "coda_psdev.h"
+#else
 #include <linux/coda.h>
 #include <linux/coda_psdev.h>
+#endif
 #include "coda_linux.h"
 
 /* initialize the debugging variables */
