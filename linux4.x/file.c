@@ -48,7 +48,7 @@ coda_file_read(struct file *coda_file, char __user *buf, size_t count, loff_t *p
         if (!host_file->f_op->read)
                 return -EINVAL;
 
-        if (cfi->cfi_access_intent) {  
+        if (cfi->cfi_access_intent) {
                 err = venus_access_intent(coda_inode->i_sb,
                                           coda_i2f(coda_inode), count, *ppos,
                                           CODA_ACCESS_TYPE_READ);
@@ -125,18 +125,18 @@ coda_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
         struct inode *coda_inode = file_inode(coda_file);
         struct coda_file_info *cfi = CODA_FTOC(coda_file);
         int err = 0;
-        int ki_pos_tmp = 0;
-        int to_tmp = 0;
+        unsigned long pos = 0;
+        size_t count = 0;
 
         BUG_ON(!cfi || cfi->cfi_magic != CODA_MAGIC);
 
-        ki_pos_tmp = iocb->ki_pos;
-        to_tmp = iov_iter_count(to);
+        pos = iocb->ki_pos;
+        count = iov_iter_count(to);
 
-		if (cfi->cfi_access_intent) {
+        if (cfi->cfi_access_intent) {
                 err = venus_access_intent(coda_inode->i_sb,
                                           coda_i2f(coda_inode),
-                                          iov_iter_count(to), iocb->ki_pos,
+                                          count, pos,
                                           CODA_ACCESS_TYPE_READ);
                 /* If not a VASTRO file, or old client version */
                 if (err == -EOPNOTSUPP) {
@@ -146,13 +146,13 @@ coda_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
                 if (err) goto finish_read;
         }
 
-        err = vfs_iter_read(cfi->cfi_container, to, &iocb->ki_pos, 
+        err = vfs_iter_read(cfi->cfi_container, to, &iocb->ki_pos,
 		                    cfi->cfi_access_intent ? RWF_SYNC : 0);
 
 finish_read:
         if (cfi->cfi_access_intent) {
                 venus_access_intent(coda_inode->i_sb, coda_i2f(coda_inode),
-                                    to_tmp, ki_pos_tmp,
+                                    count, pos,
                                     CODA_ACCESS_TYPE_READ_FINISH);
         }
 
@@ -160,7 +160,7 @@ finish_read:
 }
 
 static ssize_t
-coda_file_write_iter(struct kiocb *iocb, struct iov_iter *to)
+coda_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
 {
         struct file *coda_file = iocb->ki_filp;
         struct inode *coda_inode = file_inode(coda_file);
@@ -168,20 +168,20 @@ coda_file_write_iter(struct kiocb *iocb, struct iov_iter *to)
         struct file *host_file;
         ssize_t ret;
         int err = 0;
-        int ki_pos_tmp = 0;
-        int to_tmp = 0;
+        long long pos = 0;
+        size_t count = 0;
 
         BUG_ON(!cfi || cfi->cfi_magic != CODA_MAGIC);
 
         host_file = cfi->cfi_container;
-        
-        ki_pos_tmp = iocb->ki_pos;
-        to_tmp = iov_iter_count(to);
-        
+
+        pos = iocb->ki_pos;
+        count = iov_iter_count(from);
+
         if (cfi->cfi_access_intent) {
                 err = venus_access_intent(coda_inode->i_sb,
                                           coda_i2f(coda_inode),
-                                          iov_iter_count(to), iocb->ki_pos,
+                                          count, pos,
                                           CODA_ACCESS_TYPE_WRITE);
                 /* If not a VASTRO file, or old client version */
                 if (err == -EOPNOTSUPP) {
@@ -194,18 +194,18 @@ coda_file_write_iter(struct kiocb *iocb, struct iov_iter *to)
         file_start_write(host_file);
         inode_lock(coda_inode);
 
-        ret = vfs_iter_write(cfi->cfi_container, to, &iocb->ki_pos, 
+        ret = vfs_iter_write(cfi->cfi_container, from, &iocb->ki_pos,
 		                     cfi->cfi_access_intent ? RWF_SYNC : 0);
         coda_inode->i_size = file_inode(host_file)->i_size;
         coda_inode->i_blocks = (coda_inode->i_size + 511) >> 9;
         coda_inode->i_mtime = coda_inode->i_ctime = current_time(coda_inode);
         inode_unlock(coda_inode);
         file_end_write(host_file);
-        
+
 finish_write:
         if (cfi->cfi_access_intent) {
                 venus_access_intent(coda_inode->i_sb, coda_i2f(coda_inode),
-                                    to_tmp, ki_pos_tmp,
+                                    count, pos,
                                     CODA_ACCESS_TYPE_WRITE_FINISH);
         }
         return ret;
@@ -250,9 +250,9 @@ coda_file_mmap(struct file *coda_file, struct vm_area_struct *vma)
 	spin_unlock(&cii->c_lock);
 
         if (cfi->cfi_access_intent) {
-                err = venus_access_intent(coda_inode->i_sb, coda_i2f(coda_inode), 
-                                          vma->vm_end - vma->vm_start, 
-                                          vma->vm_pgoff * PAGE_SIZE, 
+                err = venus_access_intent(coda_inode->i_sb, coda_i2f(coda_inode),
+                                          vma->vm_end - vma->vm_start,
+                                          vma->vm_pgoff * PAGE_SIZE,
                                           CODA_ACCESS_TYPE_MMAP);
                 /* If not a VASTRO file, or old client version */
                 if (err == -EOPNOTSUPP) {
