@@ -1,6 +1,6 @@
 /*
  * File operations for Coda.
- * Original version: (C) 1996 Peter Braam 
+ * Original version: (C) 1996 Peter Braam
  * Rewritten for Linux 2.1: (C) 1997 Carnegie Mellon University
  *
  * Carnegie Mellon encourages users of this code to contribute improvements
@@ -59,7 +59,7 @@ coda_file_read(struct file *coda_file, char __user *buf, size_t count, loff_t *p
                 }
                 if (err) goto finish_read;
         }
-        
+
         err = host_file->f_op->read(host_file, buf, count, ppos);
 
 finish_read:
@@ -87,7 +87,7 @@ coda_file_write(struct file *coda_file, const char __user *buf, size_t count, lo
 
         host_inode = file_inode(host_file);
         file_start_write(host_file);
- 
+
         if (cfi->cfi_access_intent) {
                 err = venus_access_intent(coda_inode->i_sb,
                                           coda_i2f(coda_inode), count, *ppos,
@@ -99,7 +99,7 @@ coda_file_write(struct file *coda_file, const char __user *buf, size_t count, lo
                 }
                 if (err) goto finish_write;
         }
-        
+
         mutex_lock(&coda_inode->i_mutex);
 
         ret = host_file->f_op->write(host_file, buf, count, ppos);
