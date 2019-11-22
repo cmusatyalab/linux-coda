@@ -37,6 +37,7 @@
 // Date:   Wed Apr 12 12:24:38 2017 +0200
 //
 //     coda: Convert to separately allocated bdi
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0)
 static inline int _super_setup_bdi(
     struct super_block *sb, struct venus_comm *vc)
 {
@@ -44,6 +45,7 @@ static inline int _super_setup_bdi(
     sb->s_bdi = &vc->bdi;
     return error;
 }
+#endif
 #define super_setup_bdi(sb) _super_setup_bdi(sb, vc)
 #else
 #define bdi_destroy(a)
@@ -139,9 +141,9 @@ static inline ssize_t _coda_file_splice_read(
 // Date:   Tue Sep 27 11:03:58 2016 +0200
 //
 //     fs: make remaining filesystems use .rename2
-static int coda_rename(struct inode *old_dir, struct dentry *old_dentry,
-		       struct inode *new_dir, struct dentry *new_dentry,
-		       unsigned int flags);
+int coda_rename(struct inode *old_dir, struct dentry *old_dentry,
+		struct inode *new_dir, struct dentry *new_dentry,
+		unsigned int flags);
 static inline int _coda_rename(
         struct inode *oi, struct dentry *od,
         struct inode *ni, struct dentry *nd)
@@ -249,7 +251,82 @@ static inline int _coda_rename(
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 0, 0)
+// commit e36cb0b89ce20b4f8786a57e8a6bc8476f577650
+// Author: David Howells <dhowells@redhat.com>
+// Date:   Thu Jan 29 12:02:35 2015 +0000
+//
+//     VFS: (Scripted) Convert S_ISLNK/DIR/REG(dentry->d_inode) to d_is_*(dentry)
+// commit b625032b10222c4406979c7604189f2bef29c5d0
+// Author: Fabian Frederick <fabf@skynet.be>
+// Date:   Tue Feb 17 13:45:25 2015 -0800
+//
+//     fs/coda/dir.c: forward declaration clean-up
+// commit b4caecd48005fbed3949dde6c1cb233142fd69e9
+// Author: Christoph Hellwig <hch@lst.de>
+// Date:   Wed Jan 14 10:42:32 2015 +0100
+//
+//     fs: introduce f_op->mmap_capabilities for nommu mmap support
+static inline int _super_setup_bdi(
+    struct super_block *sb, struct venus_comm *vc)
+{
+    int error = bdi_setup_and_register(&vc->bdi, "coda", BDI_CAP_MAP_COPY);
+    sb->s_bdi = &vc->bdi;
+    return error;
+}
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
+// commit 93fe74b2e2b5d266d630f0c3f8287efcbe6ecd10
+// Author: Al Viro <viro@zeniv.linux.org.uk>
+// Date:   Thu Dec 11 13:19:03 2014 -0500
+//
+//     coda_venus_readdir(): use file_inode()
+// commit 946e51f2bf37f1656916eb75bd0742ba33983c28
+// Author: Al Viro <viro@zeniv.linux.org.uk>
+// Date:   Sun Oct 26 19:19:16 2014 -0400
+//
+//     move d_rcu from overlapping d_child to overlapping d_alias
+// commit a7400222e3eb7d5ce3820d2234905bbeafabd171
+// Author: Al Viro <viro@zeniv.linux.org.uk>
+// Date:   Tue Oct 21 15:20:42 2014 -0400
+//
+//     new helper: is_root_inode()
+static inline bool is_root_inode(struct inode *inode)
+{
+    return inode == inode->i_sb->s_root->d_inode;
+}
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
+// commit 834b46c37a2900bc90b5f1c5a11815be5a025445
+// Author: Fabian Frederick <fabf@skynet.be>
+// Date:   Fri Aug 8 14:20:33 2014 -0700
+//
+//     fs/coda: use linux/uaccess.h
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 16, 0)
 #error "missing compatibility glue"
+// commit a88bbbeef69daa4a9eebe656bd53ad8f8e657646
+// Author: Joe Perches <joe@perches.com>
+// Date:   Fri Jun 6 14:38:00 2014 -0700
+//
+//     coda: convert use of typedef ctl_table to struct ctl_table
+// commit 6d6bd94f4d83d70cdff67d0bf2a64ef6878216e7
+// Author: Fabian Frederick <fabf@skynet.be>
+// Date:   Fri Jun 6 14:36:20 2014 -0700
+//
+//     fs/coda: use __func__
+// commit f38cfb2564f5fead53eebd9617258ee0376b1906
+// Author: Fabian Frederick <fabf@skynet.be>
+// Date:   Fri Jun 6 14:36:19 2014 -0700
+//
+//     fs/coda: logging prefix uniformization
+// commit d9b4b3195a06e646c357f6108a424569b1a920d9
+// Author: Fabian Frederick <fabf@skynet.be>
+// Date:   Fri Jun 6 14:36:18 2014 -0700
+//
+//     fs/coda: replace printk by pr_foo()
 #endif
 
 #endif /* _KVER_COMPAT_H_ */
