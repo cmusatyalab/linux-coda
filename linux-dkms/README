@@ -1,0 +1,13 @@
+This is the Coda kernel module as in Linux-5.4-rc8 with patches to allow
+for DKMS builds against older kernels
+
+To build this, install dkms on your system and then run,
+
+    dkms add `pwd`
+    dkms build coda/7.0
+    dkms install coda/7.0
+
+and to remove,
+
+    dkms remove coda/7.0 --all
+

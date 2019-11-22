@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0
 
 /*
  * Directory operations for Coda filesystem
@@ -21,8 +22,8 @@
 #include <linux/namei.h>
 #include <linux/uaccess.h>
 
-#include <linux/coda.h>
-#include <linux/coda_psdev.h>
+#include "coda.h"
+#include "coda_psdev.h"
 #include "coda_linux.h"
 #include "coda_cache.h"
 
@@ -47,8 +48,8 @@ static struct dentry *coda_lookup(struct inode *dir, struct dentry *entry, unsig
 	int type = 0;
 
 	if (length > CODA_MAXNAMLEN) {
-		pr_err("name too long: lookup, %s (%*s)\n",
-		       coda_i2s(dir), (int)length, name);
+		pr_err("name too long: lookup, %s %zu\n",
+		       coda_i2s(dir), length);
 		return ERR_PTR(-ENAMETOOLONG);
 	}
 
@@ -356,8 +357,7 @@ static int coda_venus_readdir(struct file *coda_file, struct dir_context *ctx)
 	ino_t ino;
 	int ret;
 
-	cfi = CODA_FTOC(coda_file);
-	BUG_ON(!cfi || cfi->cfi_magic != CODA_MAGIC);
+	cfi = coda_ftoc(coda_file);
 	host_file = cfi->cfi_container;
 
 	cii = ITOC(file_inode(coda_file));
@@ -426,8 +426,7 @@ static int coda_readdir(struct file *coda_file, struct dir_context *ctx)
 	struct file *host_file;
 	int ret;
 
-	cfi = CODA_FTOC(coda_file);
-	BUG_ON(!cfi || cfi->cfi_magic != CODA_MAGIC);
+	cfi = coda_ftoc(coda_file);
 	host_file = cfi->cfi_container;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 7, 0)
@@ -435,10 +434,10 @@ static int coda_readdir(struct file *coda_file, struct dir_context *ctx)
 		struct inode *host_inode = file_inode(host_file);
 		ret = -ENOENT;
 		if (!IS_DEADDIR(host_inode)) {
-                        inode_lock(host_inode);
-                        ret = host_file->f_op->iterate(host_file, ctx);
-                        file_accessed(host_file);
-                        inode_unlock(host_inode);
+			inode_lock(host_inode);
+			ret = host_file->f_op->iterate(host_file, ctx);
+			file_accessed(host_file);
+			inode_unlock(host_inode);
 		}
 		return ret;
 	}

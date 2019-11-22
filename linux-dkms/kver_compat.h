@@ -7,7 +7,209 @@
 
 #include <linux/version.h>
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0)
+// commit cfb82e1df8b7c76991ea12958855897c2fb4debc
+// Merge: b41dae061bbd cba465b4f982
+// Author: Linus Torvalds <torvalds@linux-foundation.org>
+// Date:   Thu Sep 19 09:42:37 2019 -0700
+//
+//     Merge tag 'y2038-vfs' of git://git.kernel.org/pub/scm/linux/kernel/git/arnd/playground
+// commit ce6595a28a15c874aee374757dcd08f537d7b24d
+// Author: Al Viro <viro@zeniv.linux.org.uk>
+// Date:   Sun Jul 14 16:42:44 2019 -0400
+//
+//     kill the last users of user_{path,lpath,path_dir}()
+// commit 22b139691f9eb8b9d0bfd7341fa7436cb7a9491d
+// Author: Deepa Dinamani <deepa.kernel@gmail.com>
+// Date:   Tue Jul 30 08:22:29 2019 -0700
+//
+//     fs: Fill in max and min timestamps in superblock
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 3, 0)
+// commit a9fba24c6ac9b66c09dfc2a0e845ecace187e89c
+// Author: Pedro Cuadra <pjcuadra@gmail.com>
+// Date:   Tue Jul 16 16:29:13 2019 -0700
+//
+//     coda: add hinting support for partial file caching
+// commit 5bb44810f47a00b608ed2cb9f892ae7ce37b02bd
+// Author: Fabian Frederick <fabf@skynet.be>
+// Date:   Tue Jul 16 16:29:09 2019 -0700
+//
+//     coda: ftoc validity check integration
+// commit 7f6118ce95d2673f8c936dd47d9bbeb60f4d16ad
+// Author: Fabian Frederick <fabf@skynet.be>
+// Date:   Tue Jul 16 16:29:06 2019 -0700
+//
+//     coda: remove sb test in coda_fid_to_inode()
+// commit 6975259ae30e05068e87ab35dfc4caefb47cffe2
+// Author: Fabian Frederick <fabf@skynet.be>
+// Date:   Tue Jul 16 16:29:03 2019 -0700
+//
+//     coda: remove sysctl object from module when unused
+// commit f94845284abedf80b8d9ab37eafe0d8f737543e8
+// Author: Fabian Frederick <fabf@skynet.be>
+// Date:   Tue Jul 16 16:29:00 2019 -0700
+//
+//     coda: add __init to init_coda_psdev()
+// commit 50e9a6efb0fa6ee54b2b8a311a75fc6ae2d6a0ec
+// Author: Fabian Frederick <fabf@skynet.be>
+// Date:   Tue Jul 16 16:28:57 2019 -0700
+//
+//     coda: use SIZE() for stat
+// commit 79a0d65e77ed5e9081492848a1b936d19cdfbb0f
+// Author: Fabian Frederick <fabf@skynet.be>
+// Date:   Tue Jul 16 16:28:54 2019 -0700
+//
+//     coda: destroy mutex in put_super()
+// commit 6dc280ebeed2c96a2fb933103dafe655a922b9c1
+// Author: Jan Harkes <jaharkes@cs.cmu.edu>
+// Date:   Tue Jul 16 16:28:51 2019 -0700
+//
+//     coda: remove uapi/linux/coda_psdev.h
+// commit 8fc8b9df831387e0d02c1d0f5bb53d327e0d477a
+// Author: David Howells <dhowells@redhat.com>
+// Date:   Tue Jul 16 16:28:47 2019 -0700
+//
+//     coda: move internal defs out of include/linux/ [ver #2]
+// commit b6a18c60080fcff0921e81991fec049394fb04e9
+// Author: Jan Harkes <jaharkes@cs.cmu.edu>
+// Date:   Tue Jul 16 16:28:44 2019 -0700
+//
+//     coda: bump module version
+// commit 936dae4525322fb46f6f7bb407c5663c83e5d353
+// Author: Dan Carpenter <dan.carpenter@oracle.com>
+// Date:   Tue Jul 16 16:28:41 2019 -0700
+//
+//     coda: get rid of CODA_FREE()
+// commit 4dc48193d748f0f0fbe37105a905466ff3a6ad50
+// Author: Dan Carpenter <dan.carpenter@oracle.com>
+// Date:   Tue Jul 16 16:28:38 2019 -0700
+//
+//     coda: get rid of CODA_ALLOC()
+// commit 5e7c31dfe74703f428220384b2863525957cc160
+// Author: Jan Harkes <jaharkes@cs.cmu.edu>
+// Date:   Tue Jul 16 16:28:35 2019 -0700
+//
+//     coda: change Coda's user api to use 64-bit time_t in timespec
+// commit 6ced9aa7b56baeb241a715df4539e60d5e3118e2
+// Author: Arnd Bergmann <arnd@arndb.de>
+// Date:   Tue Jul 16 16:28:32 2019 -0700
+//
+//     coda: stop using 'struct timespec' in user API
+// commit 850622136ff2a1296b2c8aa5280a74a6a3aabe4e
+// Author: Colin Ian King <colin.king@canonical.com>
+// Date:   Tue Jul 16 16:28:29 2019 -0700
+//
+//     coda: clean up indentation, replace spaces with tab
+// commit 9a05671dd8d85cbce6cf1a00727d5919c1e56192
+// Author: Jan Harkes <jaharkes@cs.cmu.edu>
+// Date:   Tue Jul 16 16:28:23 2019 -0700
+//
+//     coda: don't try to print names that were considered too long
+// commit 6e51f8aa76b67d0a6eb168fd41a81e8478ae07a9
+// Author: Jan Harkes <jaharkes@cs.cmu.edu>
+// Date:   Tue Jul 16 16:28:16 2019 -0700
+//
+//     coda: potential buffer overflow in coda_psdev_write()
+// commit 02551c23bcd85f0c68a8259c7b953d49d44f86af
+// Author: Zhouyang Jia <jiazhouyang09@gmail.com>
+// Date:   Tue Jul 16 16:28:13 2019 -0700
+//
+//     coda: add error handling for fget
+// commit 7fa0a1da3dadfd9216df7745a1331fdaa0940d1c
+// Author: Jan Harkes <jaharkes@cs.cmu.edu>
+// Date:   Tue Jul 16 16:28:04 2019 -0700
+//
+//     coda: pass the host file in vma->vm_file on mmap
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0)
+// commit 2874c5fd284268364ece81a7bd936f3c8168e567
+// Author: Thomas Gleixner <tglx@linutronix.de>
+// Date:   Mon May 27 08:55:01 2019 +0200
+//
+//     treewide: Replace GPLv2 boilerplate/reference with SPDX - rule 152
+// commit ec8f24b7faaf3d4799a7c3f4c1b87f6b02778ad1
+// Author: Thomas Gleixner <tglx@linutronix.de>
+// Date:   Sun May 19 13:07:45 2019 +0100
+//
+//     treewide: Add SPDX license identifier - Makefile/Kconfig
+// commit 10bcba8c16aa1ebb3e1e6d16c0c8e493a0668a8c
+// Author: Sabyasachi Gupta <sabyasachi.linux@gmail.com>
+// Date:   Tue May 14 15:46:39 2019 -0700
+//
+//     fs/coda/psdev.c: remove duplicate header
+// commit d984892bd7e8f3a10ab4436f3916a84c3ee69606
+// Author: Al Viro <viro@zeniv.linux.org.uk>
+// Date:   Mon Apr 15 22:28:35 2019 -0400
+//
+//     coda: switch to ->free_inode()
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0)
+// commit 95582b00838837fc07e042979320caf917ce3fe6
+// Author: Deepa Dinamani <deepa.kernel@gmail.com>
+// Date:   Tue May 8 19:36:02 2018 -0700
+//
+//     vfs: change inode times to use struct timespec64
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 16, 0)
+// commit a9a08845e9acbd224e4ee466f5c1275ed50054e8
+// Author: Linus Torvalds <torvalds@linux-foundation.org>
+// Date:   Sun Feb 11 14:34:03 2018 -0800
+//
+//     vfs: do bulk POLL* -> EPOLL* replacement
+#define EPOLLOUT POLLOUT
+#define EPOLLIN POLLIN
+#define EPOLLWRNORM POLLWRNORM
+#define EPOLLRDNORM POLLRDNORM
+// commit cfe39442ab8ce9670b4ddd04291b8cddb9cb1129
+// Author: Al Viro <viro@zeniv.linux.org.uk>
+// Date:   Thu Feb 1 12:14:57 2018 -0500
+//
+//     use linux/poll.h instead of asm/poll.h
+// commit 168fe32a072a4b8dc81a3aebf0e5e588d38e2955
+// Merge: 13ddd1667e7f c71d227fc413
+// Author: Linus Torvalds <torvalds@linux-foundation.org>
+// Date:   Tue Jan 30 17:58:07 2018 -0800
+//
+//     Merge branch 'misc.poll' of git://git.kernel.org/pub/scm/linux/kernel/git/viro/vfs
+// commit 076ccb76e1a6cf0aa5371132efdd502a11e806f1
+// Author: Al Viro <viro@zeniv.linux.org.uk>
+// Date:   Mon Jul 3 01:02:18 2017 -0400
+//
+//     fs: annotate ->poll() instances
+typedef unsigned int __poll_t;
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0)
+// commit 1751e8a6cb935e555fcdbcb9ab4f0446e322ca3e
+// Author: Linus Torvalds <torvalds@linux-foundation.org>
+// Date:   Mon Nov 27 13:05:09 2017 -0800
+//
+//     Rename superblock flags (MS_xyz -> SB_xyz)
+#define SB_NOATIME MS_NOATIME
+// commit ca5b857cb0f42986520abd9dbb0c2508067342b2
+// Merge: a0e136e5da98 c02b1a9b41c2
+// Author: Linus Torvalds <torvalds@linux-foundation.org>
+// Date:   Fri Nov 17 12:54:01 2017 -0800
+//
+//     Merge branch 'work.misc' of git://git.kernel.org/pub/scm/linux/kernel/git/viro/vfs
+// commit d337b66a4c52c7b04eec661d86c2ef6e168965a2
+// Author: Jan Harkes <jaharkes@cs.cmu.edu>
+// Date:   Wed Sep 27 15:52:12 2017 -0400
+//
+//     coda: fix 'kernel memory exposure attempt' in fsync
+#endif
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 0)
+// commit b24413180f5600bcb3bb70fbed5cf186b60864bd
+// Author: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+// Date:   Wed Nov 1 15:07:57 2017 +0100
+//
+//     License cleanup: add SPDX GPL-2.0 license identifier to files with no license
 // commit bdd1d2d3d251c65b74ac4493e08db18971c09240
 // Author: Christoph Hellwig <hch@lst.de>
 // Date:   Fri Sep 1 17:39:13 2017 +0200
@@ -32,6 +234,19 @@
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 12, 0)
+// commit 752ade68cbd81d0321dfecc188f655a945551b25
+// Author: Michal Hocko <mhocko@suse.com>
+// Date:   Mon May 8 15:57:27 2017 -0700
+//
+//     treewide: use kv[mz]alloc* rather than opencoded variants
+static inline void *kvmalloc(size_t size, gfp_t flags)
+{
+    if (size < PAGE_SIZE)
+	return kzalloc(size, flags);
+    else
+	return vzalloc(size);
+}
+#define kvzalloc kvmalloc
 // commit a5695a79088653c73c92ae8d48658cbc49f31884
 // Author: Jan Kara <jack@suse.cz>
 // Date:   Wed Apr 12 12:24:38 2017 +0200
@@ -105,6 +320,7 @@ static inline int _coda_getattr(
 // Date:   Thu Sep 22 23:35:42 2016 -0400
 //
 //     switch generic_file_splice_read() to use of ->read_iter()
+#include "coda_fs_i.h"
 static inline ssize_t _coda_file_splice_read(
         struct file *coda_file, loff_t *ppos,
         struct pipe_inode_info *pipe, size_t count,
@@ -115,8 +331,7 @@ static inline ssize_t _coda_file_splice_read(
        struct coda_file_info *cfi;
        struct file *host_file;
 
-       cfi = CODA_FTOC(coda_file);
-       BUG_ON(!cfi || cfi->cfi_magic != CODA_MAGIC);
+       cfi = coda_ftoc(coda_file);
        host_file = cfi->cfi_container;
 
        splice_read = host_file->f_op->splice_read;
@@ -303,6 +518,20 @@ static inline bool is_root_inode(struct inode *inode)
 // Date:   Fri Aug 8 14:20:33 2014 -0700
 //
 //     fs/coda: use linux/uaccess.h
+// 361a3bf00582469877f8d18ff20f1efa6b781274
+// Author: John Stultz <john.stultz@linaro.org>
+// Date:   Wed Jul 16 21:03:58 2014 +0000
+//
+//     time64: Add time64.h header and define struct timespec64
+#if __BITS_PER_LONG == 64
+#define timespec64 timespec
+#else
+typedef __s64 time64_t;
+struct timespec64 {
+	time64_t	tv_sec;
+	long		tv_nsec;
+};
+#endif
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 16, 0)

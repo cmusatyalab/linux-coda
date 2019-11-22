@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Symlink inode operations for Coda filesystem
  * Original version: (C) 1996 P. Braam and M. Callahan
@@ -15,9 +16,8 @@
 #include <linux/errno.h>
 #include <linux/pagemap.h>
 
-#include <linux/coda.h>
-#include <linux/coda_psdev.h>
-
+#include "coda.h"
+#include "coda_psdev.h"
 #include "coda_linux.h"
 #include "kver_compat.h"
 
@@ -35,13 +35,13 @@ static int coda_symlink_filler(struct file *file, struct page *page)
 	if (error)
 		goto fail;
 	SetPageUptodate(page);
-        _coda_symlink_kunmap(page);
+	_coda_symlink_kunmap(page);
 	unlock_page(page);
 	return 0;
 
 fail:
 	SetPageError(page);
-        _coda_symlink_kunmap(page);
+	_coda_symlink_kunmap(page);
 	unlock_page(page);
 	return error;
 }

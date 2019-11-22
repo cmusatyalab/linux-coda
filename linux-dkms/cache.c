@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Cache operations for Coda.
  * For Linux 2.1: (C) 1997 Carnegie Mellon University
@@ -19,8 +20,8 @@
 #include <linux/sched.h>
 #include <linux/spinlock.h>
 
-#include <linux/coda.h>
-#include <linux/coda_psdev.h>
+#include "coda.h"
+#include "coda_psdev.h"
 #include "coda_linux.h"
 #include "coda_cache.h"
 
