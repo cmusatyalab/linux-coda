@@ -8,12 +8,6 @@
 #include <linux/version.h>
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0)
-// commit cfb82e1df8b7c76991ea12958855897c2fb4debc
-// Merge: b41dae061bbd cba465b4f982
-// Author: Linus Torvalds <torvalds@linux-foundation.org>
-// Date:   Thu Sep 19 09:42:37 2019 -0700
-//
-//     Merge tag 'y2038-vfs' of git://git.kernel.org/pub/scm/linux/kernel/git/arnd/playground
 // commit ce6595a28a15c874aee374757dcd08f537d7b24d
 // Author: Al Viro <viro@zeniv.linux.org.uk>
 // Date:   Sun Jul 14 16:42:44 2019 -0400
@@ -125,21 +119,6 @@
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0)
-// commit 2874c5fd284268364ece81a7bd936f3c8168e567
-// Author: Thomas Gleixner <tglx@linutronix.de>
-// Date:   Mon May 27 08:55:01 2019 +0200
-//
-//     treewide: Replace GPLv2 boilerplate/reference with SPDX - rule 152
-// commit ec8f24b7faaf3d4799a7c3f4c1b87f6b02778ad1
-// Author: Thomas Gleixner <tglx@linutronix.de>
-// Date:   Sun May 19 13:07:45 2019 +0100
-//
-//     treewide: Add SPDX license identifier - Makefile/Kconfig
-// commit 10bcba8c16aa1ebb3e1e6d16c0c8e493a0668a8c
-// Author: Sabyasachi Gupta <sabyasachi.linux@gmail.com>
-// Date:   Tue May 14 15:46:39 2019 -0700
-//
-//     fs/coda/psdev.c: remove duplicate header
 // commit d984892bd7e8f3a10ab4436f3916a84c3ee69606
 // Author: Al Viro <viro@zeniv.linux.org.uk>
 // Date:   Mon Apr 15 22:28:35 2019 -0400
@@ -171,11 +150,6 @@
 //
 //     use linux/poll.h instead of asm/poll.h
 // commit 168fe32a072a4b8dc81a3aebf0e5e588d38e2955
-// Merge: 13ddd1667e7f c71d227fc413
-// Author: Linus Torvalds <torvalds@linux-foundation.org>
-// Date:   Tue Jan 30 17:58:07 2018 -0800
-//
-//     Merge branch 'misc.poll' of git://git.kernel.org/pub/scm/linux/kernel/git/viro/vfs
 // commit 076ccb76e1a6cf0aa5371132efdd502a11e806f1
 // Author: Al Viro <viro@zeniv.linux.org.uk>
 // Date:   Mon Jul 3 01:02:18 2017 -0400
@@ -191,12 +165,6 @@ typedef unsigned int __poll_t;
 //
 //     Rename superblock flags (MS_xyz -> SB_xyz)
 #define SB_NOATIME MS_NOATIME
-// commit ca5b857cb0f42986520abd9dbb0c2508067342b2
-// Merge: a0e136e5da98 c02b1a9b41c2
-// Author: Linus Torvalds <torvalds@linux-foundation.org>
-// Date:   Fri Nov 17 12:54:01 2017 -0800
-//
-//     Merge branch 'work.misc' of git://git.kernel.org/pub/scm/linux/kernel/git/viro/vfs
 // commit d337b66a4c52c7b04eec661d86c2ef6e168965a2
 // Author: Jan Harkes <jaharkes@cs.cmu.edu>
 // Date:   Wed Sep 27 15:52:12 2017 -0400
