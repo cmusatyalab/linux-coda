@@ -745,7 +745,7 @@ static int coda_upcall(struct venus_comm *vcp,
 	wake_up_interruptible(&vcp->vc_waitq);
 
         /* We can return early on asynchronous requests */
-	if (outsize == NULL) {
+	if (outSize == NULL) {
 		mutex_unlock(&vcp->vc_mutex);
 		return 0;
 	}
