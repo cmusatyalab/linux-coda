@@ -24,6 +24,7 @@
 #include "coda_psdev.h"
 #include "coda_linux.h"
 #include "coda_cache.h"
+#include "kver_compat.h"
 
 static atomic_t permission_epoch = ATOMIC_INIT(0);
 
