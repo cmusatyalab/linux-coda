@@ -22,28 +22,16 @@
 #include "coda.h"
 #include "coda_psdev.h"
 #include "coda_linux.h"
+#include "kver_compat.h"
 
-/* pioctl ops */
-static int coda_ioctl_permission(struct inode *inode, int mask);
-static long coda_pioctl(struct file *filp, unsigned int cmd,
-			unsigned long user_data);
-
-/* exported from this file */
-const struct inode_operations coda_ioctl_inode_operations = {
-	.permission	= coda_ioctl_permission,
-	.setattr	= coda_setattr,
-};
-
-const struct file_operations coda_ioctl_operations = {
-	.unlocked_ioctl	= coda_pioctl,
-	.llseek		= noop_llseek,
-};
 
 /* the coda pioctl inode ops */
-static int coda_ioctl_permission(struct inode *inode, int mask)
+static int coda_ioctl_permission(struct user_namespace *mnt_userns,
+				 struct inode *inode, int mask)
 {
 	return (mask & MAY_EXEC) ? -EACCES : 0;
 }
+
 
 static long coda_pioctl(struct file *filp, unsigned int cmd,
 			unsigned long user_data)
@@ -84,3 +72,16 @@ out:
 	path_put(&path);
 	return error;
 }
+
+
+/* exported from this file */
+const struct inode_operations coda_ioctl_inode_operations = {
+	.permission	= coda_ioctl_permission,
+	.setattr	= coda_setattr,
+};
+
+const struct file_operations coda_ioctl_operations = {
+	.unlocked_ioctl	= coda_pioctl,
+	.llseek		= noop_llseek,
+};
+

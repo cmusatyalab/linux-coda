@@ -7,6 +7,28 @@
 
 #include <linux/version.h>
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 12, 0)
+// commit 549c7297717c32ee53f156cd949e055e601f67bb
+// Author: Christian Brauner <christian.brauner@ubuntu.com>
+// Date:   Thu Jan 21 14:19:43 2021 +0100
+//
+//     fs: make helpers idmap mount aware
+#define coda_create(ns,a,b,c,d) coda_create(a,b,c,d)
+#define coda_getattr(ns,a,b,c,d) coda_getattr(a,b,c,d)
+#define coda_ioctl_permission(ns,a,b) coda_ioctl_permission(a,b)
+#define coda_mkdir(ns,a,b,c) coda_mkdir(a,b,c)
+#define coda_permission(ns,a,b) coda_permission(a,b)
+#define coda_rename(ns,a,b,c,d,e) coda_rename(a,b,c,d,e)
+#define coda_setattr(ns,a,b) coda_setattr(a,b)
+#define coda_symlink(ns,a,b,c) coda_symlink(a,b,c)
+// commit 0d56a4518d5eaf595a24ab2202e171330bb2ed72
+// Author: Christian Brauner <christian.brauner@ubuntu.com>
+// Date:   Thu Jan 21 14:19:30 2021 +0100
+//
+//     stat: handle idmapped mounts
+#define generic_fillattr(ns,a,b) generic_fillattr(a,b)
+#endif
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
 // commit 1527f926fd04490f648c42f42b45218a04754f87
 // Author: Christian König <christian.koenig@amd.com>

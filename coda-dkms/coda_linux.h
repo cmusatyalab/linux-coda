@@ -27,7 +27,9 @@
 #include <linux/wait.h>		
 #include <linux/types.h>
 #include <linux/fs.h>
+
 #include "coda_fs_i.h"
+#include "kver_compat.h"
 
 /* operations */
 extern const struct inode_operations coda_dir_inode_operations;
@@ -46,10 +48,12 @@ extern const struct file_operations coda_ioctl_operations;
 /* operations shared over more than one file */
 int coda_open(struct inode *i, struct file *f);
 int coda_release(struct inode *i, struct file *f);
-int coda_permission(struct inode *inode, int mask);
+int coda_permission(struct user_namespace *mnt_userns, struct inode *inode,
+		    int mask);
 int coda_revalidate_inode(struct inode *);
-int coda_getattr(const struct path *, struct kstat *, u32, unsigned int);
-int coda_setattr(struct dentry *, struct iattr *);
+int coda_getattr(struct user_namespace *, const struct path *, struct kstat *,
+		 u32, unsigned int);
+int coda_setattr(struct user_namespace *, struct dentry *, struct iattr *);
 
 /* this file:  heloers */
 char *coda_f2s(struct CodaFid *f);
