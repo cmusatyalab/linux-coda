@@ -7,6 +7,14 @@
 
 #include <linux/version.h>
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
+// commit 1527f926fd04490f648c42f42b45218a04754f87
+// Author: Christian König <christian.koenig@amd.com>
+// Date:   Fri Oct 9 15:08:55 2020 +0200
+//
+//     mm: mmap: fix fput in error path v2
+#endif
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0)
 // commit ce6595a28a15c874aee374757dcd08f537d7b24d
 // Author: Al Viro <viro@zeniv.linux.org.uk>

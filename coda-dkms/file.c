@@ -246,10 +246,17 @@ coda_file_mmap(struct file *coda_file, struct vm_area_struct *vma)
 	ret = call_mmap(vma->vm_file, vma);
 
 	if (ret) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
 		/* if call_mmap fails, our caller will put coda_file so we
 		 * should drop the reference to the host_file that we got.
 		 */
 		fput(host_file);
+#else
+                /* which of course got swapped around in Linux-5.11, so in that
+                 * case we should drop the reference to the coda_file instead.
+		 */
+		fput(coda_file);
+#endif
 		kfree(cvm_ops);
 	} else {
 		/* here we add redirects for the open/close vm_operations */
