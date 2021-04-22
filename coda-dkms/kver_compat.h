@@ -15,6 +15,14 @@
 //     mm: mmap: fix fput in error path v2
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0)
+// commit f476c6ed17d49553d40467514b4cb2dd2648e30f
+// Author: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
+// Date:   Mon Apr 27 23:17:01 2020 +0200
+//
+//     docs: filesystems: convert coda.txt to ReST
+#endif
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0)
 // commit ce6595a28a15c874aee374757dcd08f537d7b24d
 // Author: Al Viro <viro@zeniv.linux.org.uk>
