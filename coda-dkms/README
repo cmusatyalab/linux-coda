@@ -4,10 +4,10 @@ for DKMS builds against older kernels
 To build this, install dkms on your system and then run,
 
     dkms add `pwd`
-    dkms build coda/7.0
-    dkms install coda/7.0
+    dkms build coda/7.1
+    dkms install coda/7.1
 
 and to remove,
 
-    dkms remove coda/7.0 --all
+    dkms remove coda/7.1 --all
 
