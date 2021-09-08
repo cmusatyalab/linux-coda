@@ -296,10 +296,9 @@ static int coda_rmdir(struct inode *dir, struct dentry *de)
 }
 
 /* rename */
-int coda_rename(struct user_namespace *mnt_userns,
-		struct inode *old_dir, struct dentry *old_dentry,
-		struct inode *new_dir, struct dentry *new_dentry,
-		unsigned int flags)
+static int coda_rename(struct user_namespace *mnt_userns, struct inode *old_dir,
+		       struct dentry *old_dentry, struct inode *new_dir,
+		       struct dentry *new_dentry, unsigned int flags)
 {
 	const char *old_name = old_dentry->d_name.name;
 	const char *new_name = new_dentry->d_name.name;
@@ -518,12 +517,12 @@ static int coda_dentry_delete(const struct dentry * dentry)
 	if (d_really_is_negative(dentry)) 
 		return 0;
 
-        inode = d_inode(dentry);
-        if (!inode || is_bad_inode(inode))
-                return 1;
+	inode = d_inode(dentry);
+	if (!inode || is_bad_inode(inode))
+		return 1;
 
-        cii = ITOC(inode);
-        if (cii->c_flags & C_PURGE)
+	cii = ITOC(inode);
+	if (cii->c_flags & C_PURGE)
 		return 1;
 
 	return 0;

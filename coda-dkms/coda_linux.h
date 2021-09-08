@@ -59,7 +59,7 @@ int coda_setattr(struct user_namespace *, struct dentry *, struct iattr *);
 char *coda_f2s(struct CodaFid *f);
 int coda_iscontrol(const char *name, size_t length);
 
-umode_t coda_inode_type(struct coda_vattr *);
+umode_t coda_inode_type(struct coda_vattr *attr);
 void coda_vattr_to_iattr(struct inode *, struct coda_vattr *);
 void coda_iattr_to_vattr(struct iattr *, struct coda_vattr *);
 unsigned short coda_flags_to_cflags(unsigned short);
