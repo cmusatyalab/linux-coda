@@ -6,7 +6,7 @@ To build a coda.o / coda.ko module for your Linux kernel:
 
 For 3.16 and newer kernels:
 - sudo dkms add coda-dkms
-- sudo dkms build coda/7.0
+- sudo dkms build coda/7.2
 
 For kernels before 3.16:
     won't work until the necessary compatibility glue is added to kver_compat.h.
