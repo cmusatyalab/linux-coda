@@ -7,6 +7,22 @@
 
 #include <linux/version.h>
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)
+// commit fd60b28842df833477c42da6a6d63d0d114a5fcc
+// Author: Muchun Song <songmuchun@bytedance.com>
+// Date:   Tue Mar 22 14:41:03 2022 -0700
+//
+//    fs: allocate inode by using alloc_inode_sb()
+#define alloc_inode_sb(_sb, cache, gfp) kmem_cache_alloc(cache, gfp)
+#else
+// commit cbcc268bb1ce5b539e7652d398e08e9b83dc4cef
+// Author: Matthew Wilcox (Oracle) <willy@infradead.org>
+// Date:   Sun Feb 13 17:23:58 2022 -0500
+//
+//     fs: Move many prototypes to pagemap.h
+#include <linux/pagemap.h>
+#endif
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 12, 0)
 // commit 9da29c7f77cd04e5c9150e30f047521b6f20a918
 // Author: Christian König <christian.koenig@amd.com>
