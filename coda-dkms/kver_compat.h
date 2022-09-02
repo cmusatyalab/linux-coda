@@ -7,6 +7,14 @@
 
 #include <linux/version.h>
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 19, 0)
+// commit 65c0d259cb1721c49387f1db97245d5228616a16
+// Author: Matthew Wilcox (Oracle) <willy@infradead.org>
+// Date:   Fri Apr 29 11:12:16 2022 -0400
+//
+//    coda: Convert coda to read_folio
+#endif
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)
 // commit fd60b28842df833477c42da6a6d63d0d114a5fcc
 // Author: Muchun Song <songmuchun@bytedance.com>

@@ -21,9 +21,17 @@
 #include "coda_linux.h"
 #include "kver_compat.h"
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 19, 0)
 static int coda_symlink_filler(struct file *file, struct page *page)
 {
 	struct inode *inode = page->mapping->host;
+#define read_folio readpage
+#else
+static int coda_symlink_filler(struct file *file, struct folio *folio)
+{
+	struct page *page = &folio->page;
+	struct inode *inode = folio->mapping->host;
+#endif
 	int error;
 	struct coda_inode_info *cii;
 	unsigned int len = PAGE_SIZE;
@@ -47,5 +55,5 @@ fail:
 }
 
 const struct address_space_operations coda_symlink_aops = {
-	.readpage	= coda_symlink_filler,
+	.read_folio	= coda_symlink_filler,
 };
